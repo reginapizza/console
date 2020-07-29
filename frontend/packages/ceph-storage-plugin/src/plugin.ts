@@ -19,6 +19,7 @@ import {
 import {
   detectOCS,
   detectOCSSupportedFeatures,
+  detectRGW,
   CEPH_FLAG,
   OCS_INDEPENDENT_FLAG,
   OCS_SUPPORT_FLAGS,
@@ -78,6 +79,12 @@ const plugin: Plugin<ConsumedExtensions> = [
     type: 'FeatureFlag/Custom',
     properties: {
       detect: detectOCS,
+    },
+  },
+  {
+    type: 'FeatureFlag/Custom',
+    properties: {
+      detect: detectRGW,
     },
   },
   {
@@ -146,6 +153,20 @@ const plugin: Plugin<ConsumedExtensions> = [
       loader: () =>
         import(
           './components/dashboard-page/storage-dashboard/inventory-card' /* webpackChunkName: "ceph-storage-inventory-card" */
+        ).then((m) => m.default),
+    },
+    flags: {
+      required: [CEPH_FLAG],
+    },
+  },
+  {
+    type: 'Dashboards/Card',
+    properties: {
+      tab: 'persistent-storage',
+      position: GridPosition.LEFT,
+      loader: () =>
+        import(
+          './components/dashboard-page/storage-dashboard/storage-efficiency-card/storage-efficiency-card' /* webpackChunkName: "ceph-storage-efficiency-card" */
         ).then((m) => m.default),
     },
     flags: {

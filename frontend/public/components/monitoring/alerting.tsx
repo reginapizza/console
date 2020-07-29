@@ -38,12 +38,9 @@ import {
   alertDescription,
   alertingRuleIsActive,
   alertingRuleSource,
-  AlertSeverity,
   alertSource,
   alertState,
-  AlertStates,
   silenceState,
-  SilenceStates,
 } from '../../reducers/monitoring';
 import store, { RootState } from '../../redux';
 import { RowFunction, Table, TableData, TableRow } from '../factory';
@@ -58,8 +55,10 @@ import { QueryBrowser, QueryObj } from '../monitoring/query-browser';
 import { CreateSilence, EditSilence } from '../monitoring/silence-form';
 import {
   Alert,
-  AlertSource,
   Alerts,
+  AlertSeverity,
+  AlertSource,
+  AlertStates,
   ListPageProps,
   MonitoringResource,
   PrometheusAlert,
@@ -67,6 +66,7 @@ import {
   Rules,
   Silence,
   Silences,
+  SilenceStates,
 } from '../monitoring/types';
 import {
   AlertResource,
@@ -84,7 +84,7 @@ import { refreshNotificationPollers } from '../notification-drawer';
 import { formatPrometheusDuration } from '../utils/datetime';
 import { ActionsMenu } from '../utils/dropdown';
 import { Firehose } from '../utils/firehose';
-import { SectionHeading, ActionButtons } from '../utils/headings';
+import { SectionHeading, ActionButtons, BreadCrumbs } from '../utils/headings';
 import { Kebab } from '../utils/kebab';
 import { ExternalLink, getURLSearchParams } from '../utils/link';
 import { ResourceLink } from '../utils/resource-link';
@@ -92,7 +92,6 @@ import { ResourceStatus } from '../utils/resource-status';
 import { history } from '../utils/router';
 import { LoadingInline, StatusBox } from '../utils/status-box';
 import { Timestamp } from '../utils/timestamp';
-import { BreadCrumbs } from '../utils';
 
 const ruleURL = (rule: Rule) => `${RuleResource.plural}/${_.get(rule, 'id')}`;
 
@@ -182,7 +181,7 @@ const SilenceState = ({ silence }) => {
   ) : null;
 };
 
-const StateTimestamp = ({ text, timestamp }) => (
+export const StateTimestamp = ({ text, timestamp }) => (
   <div className="text-muted monitoring-timestamp">
     {text}&nbsp;
     <Timestamp timestamp={timestamp} />
@@ -287,14 +286,10 @@ const Label = ({ k, v }) => (
   </div>
 );
 
-const queryBrowserURL = (
-  query: string,
-  activePerspective: string = 'admin',
-  activeNamespace?: string,
-) =>
-  activePerspective === 'admin'
-    ? `/monitoring/query-browser?query0=${encodeURIComponent(query)}`
-    : `/dev-monitoring/ns/${activeNamespace}/metrics?query0=${encodeURIComponent(query)}`;
+const queryBrowserURL = (query: string, namespace: string) =>
+  namespace
+    ? `/dev-monitoring/ns/${namespace}/metrics?query0=${encodeURIComponent(query)}`
+    : `/monitoring/query-browser?query0=${encodeURIComponent(query)}`;
 
 const Graph_: React.FC<GraphProps> = ({
   deleteAll,
@@ -302,7 +297,6 @@ const Graph_: React.FC<GraphProps> = ({
   patchQuery,
   rule,
   namespace,
-  activePerspective,
 }) => {
   const { duration = 0, query = '' } = rule || {};
 
@@ -320,9 +314,7 @@ const Graph_: React.FC<GraphProps> = ({
   const timespan = Math.max(3 * duration, 30 * 60) * 1000;
 
   const GraphLink = () =>
-    query ? (
-      <Link to={queryBrowserURL(query, activePerspective, namespace)}>View in Metrics</Link>
-    ) : null;
+    query ? <Link to={queryBrowserURL(query, namespace)}>View in Metrics</Link> : null;
 
   return (
     <QueryBrowser
@@ -427,7 +419,7 @@ const SilenceTableRow: RowFunction<Silence> = ({ index, key, obj, style }) => {
   );
 };
 
-const alertMessageResources: { [labelName: string]: K8sKind } = {
+export const alertMessageResources: { [labelName: string]: K8sKind } = {
   container: ContainerModel,
   daemonset: DaemonSetModel,
   deployment: DeploymentModel,
@@ -505,31 +497,19 @@ const alertStateToProps = (state: RootState, { match }): AlertsDetailsPageProps 
   const alerts = _.filter(data, (a) => a.rule.id === ruleID);
   const rule = alerts?.[0]?.rule;
   const alert = _.find(alerts, (a) => _.isEqual(a.labels, labels));
-  const url = match.url;
   return {
     alert,
     loaded,
     loadError,
+    namespace,
     rule,
     silencesLoaded,
-    activePerspective: perspective,
-    namespace,
-    url,
   };
 };
 
 export const AlertsDetailsPage = withFallback(
   connect(alertStateToProps)((props: AlertsDetailsPageProps) => {
-    const {
-      alert,
-      loaded,
-      loadError,
-      rule,
-      silencesLoaded,
-      activePerspective,
-      namespace,
-      url,
-    } = props;
+    const { alert, loaded, loadError, namespace, rule, silencesLoaded } = props;
     const { annotations = {}, labels = {}, silencedBy = [] } = alert || {};
     const { alertname, severity } = labels as any;
     const state = alertState(alert);
@@ -545,16 +525,13 @@ export const AlertsDetailsPage = withFallback(
               breadcrumbs={[
                 {
                   name: 'Alerts',
-                  path:
-                    activePerspective === 'admin'
-                      ? '/monitoring/alerts'
-                      : `/dev-monitoring/ns/${namespace}/alerts`,
+                  path: namespace ? `/dev-monitoring/ns/${namespace}/alerts` : '/monitoring/alerts',
                 },
-                { name: 'Alert Details', path: url },
+                { name: 'Alert Details', path: undefined },
               ]}
             />
             <h1 className="co-m-pane__heading">
-              <div className="co-resource-item">
+              <div data-test="resource-title" className="co-resource-item">
                 <MonitoringResourceIcon
                   className="co-m-resource-icon--lg"
                   resource={AlertResource}
@@ -576,12 +553,7 @@ export const AlertsDetailsPage = withFallback(
             <div className="co-m-pane__body-group">
               <div className="row">
                 <div className="col-sm-12">
-                  <Graph
-                    filterLabels={labels}
-                    rule={rule}
-                    activePerspective={activePerspective}
-                    namespace={namespace}
-                  />
+                  <Graph filterLabels={labels} namespace={namespace} rule={rule} />
                 </div>
               </div>
               <div className="row">
@@ -636,7 +608,7 @@ export const AlertsDetailsPage = withFallback(
               </div>
               <div className="row">
                 <div className="col-xs-12">
-                  <dl className="co-m-pane__details">
+                  <dl className="co-m-pane__details" data-test="label-list">
                     <dt>Labels</dt>
                     <dd>
                       {_.isEmpty(labels) ? (
@@ -661,7 +633,7 @@ export const AlertsDetailsPage = withFallback(
                         <MonitoringResourceIcon resource={RuleResource} />
                         <Link
                           to={ruleURL(rule)}
-                          data-test-id="alert-detail-resource-link"
+                          data-test="alert-rules-detail-resource-link"
                           className="co-resource-item__resource-name"
                         >
                           {_.get(rule, 'name')}
@@ -709,7 +681,7 @@ const ActiveAlerts = ({ alerts, ruleID }) => (
       {_.sortBy(alerts, alertDescription).map((a, i) => (
         <div className="row co-resource-list__item" key={i}>
           <div className="col-xs-6">
-            <Link className="co-resource-item" to={alertURL(a, ruleID)}>
+            <Link className="co-resource-item" data-test="active-alerts" to={alertURL(a, ruleID)}>
               {alertDescription(a)}
             </Link>
           </div>
@@ -732,27 +704,39 @@ const ActiveAlerts = ({ alerts, ruleID }) => (
 );
 
 const ruleStateToProps = (state: RootState, { match }): AlertRulesDetailsPageProps => {
-  const { data, loaded, loadError }: Rules = rulesToProps(state);
+  const perspective = _.has(match.params, 'ns') ? 'dev' : 'admin';
+  const namespace = match.params?.ns;
+  const { data, loaded, loadError }: Rules = rulesToProps(state, perspective);
   const id = _.get(match, 'params.id');
   const rule = _.find(data, { id });
-  return { loaded, loadError, rule };
+  return { loaded, loadError, namespace, rule };
 };
 
-const AlertRulesDetailsPage = withFallback(
+export const AlertRulesDetailsPage = withFallback(
   connect(ruleStateToProps)((props: AlertRulesDetailsPageProps) => {
-    const { loaded, loadError, rule } = props;
-    const { alerts = [], annotations = {}, duration = null, name = '', query = '' } = rule || {};
-    const severity = rule?.labels?.severity;
-
+    const { loaded, loadError, namespace, rule } = props;
+    const { alerts = [], annotations, duration, labels, name = '', query = '' } = rule || {};
+    const severity = labels?.severity;
     return (
       <>
         <Helmet>
           <title>{`${name || RuleResource.label} · Details`}</title>
         </Helmet>
         <StatusBox data={rule} label={RuleResource.label} loaded={loaded} loadError={loadError}>
-          <div className="co-m-nav-title co-m-nav-title--detail">
+          <div className="co-m-nav-title co-m-nav-title--detail co-m-nav-title--breadcrumbs">
+            <BreadCrumbs
+              breadcrumbs={[
+                {
+                  name: namespace ? 'Alerts' : 'Alerting Rules',
+                  path: namespace
+                    ? `/dev-monitoring/ns/${namespace}/alerts`
+                    : '/monitoring/alertrules',
+                },
+                { name: 'Alerting Rule Details', path: undefined },
+              ]}
+            />
             <h1 className="co-m-pane__heading">
-              <div className="co-resource-item">
+              <div data-test="resource-title" className="co-resource-item">
                 <MonitoringResourceIcon
                   className="co-m-resource-icon--lg"
                   resource={RuleResource}
@@ -776,9 +760,9 @@ const AlertRulesDetailsPage = withFallback(
                     <dd>
                       <Severity severity={severity} />
                     </dd>
-                    <Annotation title="Description">{annotations.description}</Annotation>
-                    <Annotation title="Summary">{annotations.summary}</Annotation>
-                    <Annotation title="Message">{annotations.message}</Annotation>
+                    <Annotation title="Description">{annotations?.description}</Annotation>
+                    <Annotation title="Summary">{annotations?.summary}</Annotation>
+                    <Annotation title="Message">{annotations?.message}</Annotation>
                   </dl>
                 </div>
                 <div className="col-sm-6">
@@ -791,9 +775,27 @@ const AlertRulesDetailsPage = withFallback(
                     )}
                     <dt>Expression</dt>
                     <dd>
-                      <Link to={queryBrowserURL(query)}>
+                      <Link to={queryBrowserURL(query, namespace)}>
                         <pre className="co-pre-wrap monitoring-query">{query}</pre>
                       </Link>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-xs-12">
+                  <dl className="co-m-pane__details">
+                    <dt>Labels</dt>
+                    <dd>
+                      {_.isEmpty(labels) ? (
+                        <div className="text-muted">No labels</div>
+                      ) : (
+                        <div className={`co-text-${RuleResource.kind.toLowerCase()}`}>
+                          {_.map(labels, (v, k) => (
+                            <Label key={k} k={k} v={v} />
+                          ))}
+                        </div>
+                      )}
                     </dd>
                   </dl>
                 </div>
@@ -806,7 +808,7 @@ const AlertRulesDetailsPage = withFallback(
               <SectionHeading text="Active Alerts" />
               <div className="row">
                 <div className="col-sm-12">
-                  <Graph rule={rule} />
+                  <Graph namespace={namespace} rule={rule} />
                 </div>
               </div>
               <div className="row">
@@ -839,7 +841,11 @@ const SilencedAlertsList = ({ alerts }) =>
         {_.sortBy(alerts, alertDescription).map((a, i) => (
           <div className="row co-resource-list__item" key={i}>
             <div className="col-xs-9">
-              <Link className="co-resource-item" to={alertURL(a, a.rule.id)}>
+              <Link
+                className="co-resource-item"
+                data-test="firing-alerts"
+                to={alertURL(a, a.rule.id)}
+              >
                 {a.labels.alertname}
               </Link>
               <div className="monitoring-description">{alertDescription(a)}</div>
@@ -858,7 +864,7 @@ const SilencedAlertsList = ({ alerts }) =>
 
 const SilencesDetailsPage = withFallback(
   connect(silenceParamToProps)((props: SilencesDetailsPageProps) => {
-    const { alertsLoaded, loaded, loadError, silence } = props;
+    const { alertsLoaded, loaded, loadError, namespace, silence } = props;
     const {
       comment = '',
       createdBy = '',
@@ -881,9 +887,20 @@ const SilencesDetailsPage = withFallback(
           loaded={loaded}
           loadError={loadError}
         >
-          <div className="co-m-nav-title co-m-nav-title--detail">
+          <div className="co-m-nav-title co-m-nav-title--detail co-m-nav-title--breadcrumbs">
+            <BreadCrumbs
+              breadcrumbs={[
+                {
+                  name: 'Silences',
+                  path: namespace
+                    ? `/dev-monitoring/ns/${namespace}/silences`
+                    : '/monitoring/silences',
+                },
+                { name: 'Silence Details', path: undefined },
+              ]}
+            />
             <h1 className="co-m-pane__heading">
-              <div className="co-resource-item">
+              <div data-test="resource-title" className="co-resource-item">
                 <MonitoringResourceIcon
                   className="co-m-resource-icon--lg"
                   resource={SilenceResource}
@@ -906,7 +923,7 @@ const SilencesDetailsPage = withFallback(
                       </>
                     )}
                     <dt>Matchers</dt>
-                    <dd>
+                    <dd data-test="label-list">
                       {_.isEmpty(matchers) ? (
                         <div className="text-muted">No matchers</div>
                       ) : (
@@ -1477,11 +1494,9 @@ type AlertsDetailsPageProps = {
   alert: Alert;
   loaded: boolean;
   loadError?: string;
+  namespace: string;
   rule: Rule;
   silencesLoaded: boolean;
-  activePerspective: string;
-  namespace: string;
-  url: string;
 };
 
 type AlertMessageProps = {
@@ -1493,6 +1508,7 @@ type AlertMessageProps = {
 type AlertRulesDetailsPageProps = {
   loaded: boolean;
   loadError?: string;
+  namespace: string;
   rule: Rule;
 };
 
@@ -1500,6 +1516,7 @@ type SilencesDetailsPageProps = {
   alertsLoaded: boolean;
   loaded: boolean;
   loadError?: string;
+  namespace: string;
   silence: Silence;
 };
 
@@ -1510,10 +1527,9 @@ type AlertingPageProps = {
 type GraphProps = {
   deleteAll: () => never;
   filterLabels?: PrometheusLabels;
+  namespace?: string;
   patchQuery: (index: number, patch: QueryObj) => any;
   rule: Rule;
-  namespace?: string;
-  activePerspective?: string;
 };
 
 type MonitoringResourceIconProps = {

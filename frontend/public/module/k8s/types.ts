@@ -364,6 +364,29 @@ export type DeploymentKind = {
   };
 } & K8sResourceCommon;
 
+export type HPAMetric = {
+  type: 'Object' | 'Pods' | 'Resource';
+  resource: {
+    name: string;
+    target: {
+      averageUtilization?: number;
+      type: string;
+    };
+  };
+};
+export type HorizontalPodAutoscalerKind = K8sResourceCommon & {
+  spec: {
+    scaleTargetRef: {
+      apiVersion: string;
+      kind: string;
+      name: string;
+    };
+    minReplicas?: number;
+    maxReplicas: number;
+    metrics?: HPAMetric[];
+  };
+};
+
 export type StorageClassResourceKind = {
   provisioner: string;
   reclaimPolicy: string;
@@ -920,9 +943,9 @@ export type GroupVersionKind = string;
 export type K8sResourceKindReference = GroupVersionKind | string;
 
 export type SecretKind = {
-  data: { [key: string]: string };
+  data?: { [key: string]: string };
   stringData?: { [key: string]: string };
-  type: string;
+  type?: string;
 } & K8sResourceCommon;
 
 export type ServiceAccountKind = {

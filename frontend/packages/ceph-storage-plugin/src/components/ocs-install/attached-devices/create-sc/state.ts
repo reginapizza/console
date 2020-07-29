@@ -1,17 +1,4 @@
-export const diskModeDropdownItems = {
-  BLOCK: 'Block',
-  FILESYSTEM: 'Filesystem',
-};
-
-export const diskTypeDropdownItems = {
-  SSD: 'SSD / NVMe',
-  HDD: 'HDD',
-};
-
-export const diskSizeUnitOptions = {
-  TiB: 'TiB',
-  GiB: 'GiB',
-};
+import { diskTypeDropdownItems, diskModeDropdownItems } from '../../../../constants';
 
 export const initialState: State = {
   // states for step 1
@@ -27,16 +14,19 @@ export const initialState: State = {
   diskMode: diskModeDropdownItems.BLOCK,
   maxDiskLimit: '',
   nodeNames: [], // nodes selected on the LVS step
-  minDiskSize: 0,
-  maxDiskSize: 'All',
+  minDiskSize: '0',
+  maxDiskSize: '',
   diskSizeUnit: 'TiB',
   isValidMaxSize: true,
   // states for chart
   nodesDiscoveries: [],
+  filteredDiscoveries: [],
   chartSelectedData: '',
   chartTotalData: '',
   chartDataUnit: '',
   showConfirmModal: false,
+  finalStep: false,
+  showDiskList: false,
 
   // common states
   isLoading: false,
@@ -69,8 +59,8 @@ export type State = {
   diskMode: string;
   maxDiskLimit: string;
   nodeNames: string[];
-  minDiskSize: number | string;
-  maxDiskSize: number | string;
+  minDiskSize: string;
+  maxDiskSize: string;
   diskSizeUnit: string;
   isValidMaxSize: boolean;
   chartSelectedData: string;
@@ -84,6 +74,9 @@ export type State = {
   nodesDiscoveries: Discoveries[];
   showConfirmModal: boolean;
   onNextClick: () => void;
+  filteredDiscoveries: Discoveries[];
+  finalStep: boolean;
+  showDiskList: boolean;
 };
 
 export type Action =
@@ -109,7 +102,10 @@ export type Action =
   | { type: 'setChartTotalData'; value: string }
   | { type: 'setChartDataUnit'; unit: string }
   | { type: 'setShowConfirmModal'; value: boolean }
-  | { type: 'setOnNextClick'; value: OnNextClick };
+  | { type: 'setOnNextClick'; value: OnNextClick }
+  | { type: 'setFilteredDiscoveries'; value: Discoveries[] }
+  | { type: 'setFinalStep'; value: boolean }
+  | { type: 'setShowDiskList'; value: boolean };
 
 export const reducer = (state: State, action: Action) => {
   switch (action.type) {
@@ -157,6 +153,12 @@ export const reducer = (state: State, action: Action) => {
       return Object.assign({}, state, { showConfirmModal: action.value });
     case 'setOnNextClick':
       return Object.assign({}, state, { onNextClick: action.value });
+    case 'setFilteredDiscoveries':
+      return Object.assign({}, state, { filteredDiscoveries: action.value });
+    case 'setFinalStep':
+      return Object.assign({}, state, { finalStep: action.value });
+    case 'setShowDiskList':
+      return Object.assign({}, state, { showDiskList: action.value });
     default:
       return initialState;
   }

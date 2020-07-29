@@ -9,7 +9,13 @@ import {
 import { getNodes } from '@console/local-storage-operator-plugin/src/utils';
 import { getLocalVolumeSetRequestData } from '@console/local-storage-operator-plugin/src/components/local-volume-set/local-volume-set-request-data';
 import { State, Action } from '../state';
-import { minSelectedNode } from '../../../../../constants';
+import { DiscoveryDonutChart } from './donut-chart';
+import {
+  minSelectedNode,
+  diskTypeDropdownItems,
+  diskModeDropdownItems,
+  allNodesSelectorTxt,
+} from '../../../../../constants';
 import '../../attached-devices.scss';
 
 const makeLocalVolumeSetCall = (state: State, dispatch: React.Dispatch<Action>) => {
@@ -19,6 +25,7 @@ const makeLocalVolumeSetCall = (state: State, dispatch: React.Dispatch<Action>) 
     .then(() => {
       state.onNextClick();
       dispatch({ type: 'setIsLoading', value: false });
+      dispatch({ type: 'setFinalStep', value: true });
     })
     .catch((err) => {
       dispatch({ type: 'setError', value: err.message });
@@ -34,8 +41,15 @@ export const CreateLocalVolumeSet: React.FC<CreateLocalVolumeSetProps> = ({ stat
       <LocalVolumeSetHeader />
       <div className="ceph-ocs-install__form-wrapper">
         <Form noValidate={false} className="ceph-ocs-install__create-sc-form">
-          <LocalVolumeSetInner state={state} dispatch={dispatch} />
+          <LocalVolumeSetInner
+            state={state}
+            dispatch={dispatch}
+            diskTypeOptions={diskTypeDropdownItems}
+            diskModeOptions={diskModeDropdownItems}
+            allNodesHelpTxt={allNodesSelectorTxt}
+          />
         </Form>
+        <DiscoveryDonutChart state={state} dispatch={dispatch} />
       </div>
       <ConfirmationModal state={state} dispatch={dispatch} />
       {nodesCnt < minSelectedNode && (
@@ -71,25 +85,23 @@ const ConfirmationModal = ({ state, dispatch }) => {
   };
 
   return (
-    <>
-      <Modal
-        title="Create Storage Class"
-        isOpen={state.showConfirmModal}
-        onClose={cancel}
-        variant="small"
-        actions={[
-          <Button key="confirm" variant="primary" onClick={makeLVSCall}>
-            Yes
-          </Button>,
-          <Button key="cancel" variant="link" onClick={cancel}>
-            Cancel
-          </Button>,
-        ]}
-      >
-        {
-          "After the volume set and storage class are created you won't be able to go back to this step. Are you sure you want to continue?"
-        }
-      </Modal>
-    </>
+    <Modal
+      title="Create Storage Class"
+      isOpen={state.showConfirmModal}
+      onClose={cancel}
+      variant="small"
+      actions={[
+        <Button key="confirm" variant="primary" onClick={makeLVSCall}>
+          Yes
+        </Button>,
+        <Button key="cancel" variant="link" onClick={cancel}>
+          Cancel
+        </Button>,
+      ]}
+    >
+      {
+        "After the volume set and storage class are created you won't be able to go back to this step. Are you sure you want to continue?"
+      }
+    </Modal>
   );
 };
