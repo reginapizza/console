@@ -153,6 +153,11 @@ export interface DockerData {
   containerPort?: number;
 }
 
+export interface DevfileData {
+  devfilePath?: string;
+  containerPort?: number;
+}
+
 export interface RouteData {
   disable?: boolean;
   create: boolean;
@@ -227,6 +232,7 @@ export const GitReadableTypes = {
 export enum ImportTypes {
   git = 'git',
   docker = 'docker',
+  devfile = 'devfile',
   s2i = 's2i',
 }
 

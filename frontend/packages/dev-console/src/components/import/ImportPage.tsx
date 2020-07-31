@@ -22,6 +22,13 @@ const ImportFlows: { [name: string]: ImportData } = {
   docker: {
     type: ImportTypes.docker,
     title: 'Import from Dockerfile',
+    buildStrategy: 'Devfile',
+    loader: () =>
+      import('./GitImportForm' /* webpackChunkName: "git-import-form" */).then((m) => m.default),
+  },
+  devfile: {
+    type: ImportTypes.devfile,
+    title: 'Import from Devfile',
     buildStrategy: 'Docker',
     loader: () =>
       import('./GitImportForm' /* webpackChunkName: "git-import-form" */).then((m) => m.default),
