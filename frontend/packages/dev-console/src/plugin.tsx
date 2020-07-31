@@ -1032,6 +1032,28 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'AddAction',
     properties: {
+      id: 'import-from-devfile',
+      url: '/import?importType=devfile',
+      label: 'From Devfile',
+      description: 'Import your Devfile from your git repo to be built and deployed',
+      icon: dockerfileIcon,
+      accessReview: [
+        BuildConfigModel,
+        ImageStreamModel,
+        DeploymentConfigModel,
+        SecretModel,
+        RouteModel,
+        ServiceModel,
+      ].map((model) => ({
+        group: model.apiGroup || '',
+        resource: model.plural,
+        verb: 'create',
+      })),
+    },
+  },
+  {
+    type: 'AddAction',
+    properties: {
       id: 'import-yaml',
       url: '/k8s/ns/:namespace/import',
       label: 'YAML',
