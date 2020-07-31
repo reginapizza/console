@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import { asAccessReview, Kebab, KebabOption } from '@console/internal/components/utils';
-import { K8sKind, K8sResourceCommon, K8sResourceKind, PodKind } from '@console/internal/module/k8s';
+import { K8sKind, K8sResourceKind, PodKind } from '@console/internal/module/k8s';
 import { getName, getNamespace, YellowExclamationTriangleIcon } from '@console/shared';
 import { confirmModal } from '@console/internal/components/modals';
 import { VMIKind, VMKind } from '../../types/vm';
@@ -16,7 +16,6 @@ import { restartVM, startVM, stopVM, VMActionType } from '../../k8s/requests/vm'
 import { startVMIMigration } from '../../k8s/requests/vmi';
 import { cancelMigration } from '../../k8s/requests/vmim';
 import { cloneVMModal } from '../modals/clone-vm-modal';
-import { VMCDRomModal } from '../modals/cdrom-vm-modal/vm-cdrom-modal';
 import { getVMStatus } from '../../statuses/vm/vm-status';
 import { isVMIPaused } from '../../selectors/vmi';
 import { unpauseVMI, VMIActionType } from '../../k8s/requests/vmi/actions';
@@ -29,18 +28,12 @@ import { deleteVMIModal } from '../modals/menu-actions-modals/delete-vmi-modal';
 import { VMImportWrappper } from '../../k8s/wrapper/vm-import/vm-import-wrapper';
 import { StatusGroup } from '../../constants/status-group';
 import { cancelVMImport } from '../../k8s/requests/vmimport';
+import { getActionMessage } from './constants';
 
 type ActionArgs = {
   vmi?: VMIKind;
   vmStatusBundle?: VMStatusBundle;
 };
-
-const getActionMessage = (obj: K8sResourceCommon, action: VMActionType | VMIActionType) => (
-  <>
-    Are you sure you want to {action} <strong>{getName(obj)}</strong> in namespace{' '}
-    <strong>{getNamespace(obj)}</strong>?
-  </>
-);
 
 export const menuActionDeleteVMImport = (
   kindObj: K8sKind,
@@ -233,22 +226,6 @@ const menuActionClone = (
   };
 };
 
-const menuActionCdEdit = (
-  kindObj: K8sKind,
-  vm: VMKind,
-  { vmStatusBundle }: ActionArgs,
-): KebabOption => {
-  return {
-    hidden:
-      vmStatusBundle?.status?.isImporting() ||
-      vmStatusBundle?.status?.isMigrating() ||
-      isVMRunningOrExpectedRunning(vm),
-    label: 'Edit CD-ROMs',
-    callback: () => VMCDRomModal({ vmLikeEntity: vm, modalClassName: 'modal-lg' }),
-    accessReview: asAccessReview(kindObj, vm, 'patch'),
-  };
-};
-
 export const menuActionDeleteVM = (kindObj: K8sKind, vm: VMKind, vmi: VMIKind): KebabOption => ({
   label: `Delete ${kindObj.label}`,
   callback: () =>
@@ -299,7 +276,6 @@ export const vmMenuActions = [
   menuActionMigrate,
   menuActionCancelMigration,
   menuActionClone,
-  menuActionCdEdit,
   menuActionOpenConsole,
   Kebab.factory.ModifyLabels,
   Kebab.factory.ModifyAnnotations,

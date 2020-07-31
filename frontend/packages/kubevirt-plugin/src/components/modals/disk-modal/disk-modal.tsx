@@ -57,6 +57,8 @@ import { TemplateValidations } from '../../../utils/validations/template/templat
 import { ConfigMapKind } from '@console/internal/module/k8s';
 import { UIStorageEditConfig } from '../../../types/ui/storage';
 import { isFieldDisabled } from '../../../utils/ui/edit-config';
+import { PendingChangesAlert } from '../../Alerts/PendingChangesAlert';
+import { MODAL_RESTART_IS_REQUIRED } from '../../../strings/vm/status';
 
 import './disk-modal.scss';
 
@@ -84,6 +86,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
     templateValidations,
     storageClassConfigMap: _storageClassConfigMap,
     editConfig,
+    isVMRunning,
   } = props;
   const inProgress = _inProgress || !isLoaded(_storageClassConfigMap);
   const isDisabled = (fieldName: string, disabled?: boolean) =>
@@ -109,7 +112,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
   });
   const combinedDiskSize = combinedDisk.getSize();
 
-  const type = disk.getType() || DiskType.DISK;
+  const [type, setType] = React.useState<DiskType>(disk.getType() || DiskType.DISK);
 
   const [source, setSource] = React.useState<StorageUISource>(
     combinedDisk.getInitialSource(isEditing),
@@ -228,6 +231,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
       pvc: pvcValidation,
       diskInterface: busValidation,
       url: urlValidation,
+      type: typeValidation,
     },
     isValid,
     hasAllRequiredFilled,
@@ -311,12 +315,21 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
     setAdvancedDrawerIsOpen(!advancedDrawerIsOpen);
   };
 
+  const onTypeChanged = (t) => {
+    const newType = DiskType.fromString(t);
+    setType(newType);
+    if (newType === DiskType.CDROM && source === StorageUISource.BLANK) {
+      onSourceChanged(StorageUISource.URL.getValue());
+    }
+  };
+
   return (
     <div className="modal-content">
       <ModalTitle>
         {isEditing ? EDIT : ADD} {type.toString()}
       </ModalTitle>
       <ModalBody>
+        {isVMRunning && <PendingChangesAlert warningMsg={MODAL_RESTART_IS_REQUIRED} />}
         <Form>
           <FormRow title="Source" fieldId={asId('source')} isRequired>
             <FormSelect
@@ -413,10 +426,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
           >
             <TextInput
               validated={!isValidationError(nameValidation) ? 'default' : 'error'}
-              isDisabled={isDisabled(
-                'name',
-                !usedDiskNames || !source.isNameEditingSupported(type),
-              )}
+              isDisabled={isDisabled('name', !usedDiskNames)}
               isRequired
               id={asId('name')}
               value={name}
@@ -490,6 +500,21 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
                   }`}
                 />
               ))}
+            </FormSelect>
+          </FormRow>
+          <FormRow title="Type" fieldId={asId('type')} validation={typeValidation} isRequired>
+            <FormSelect
+              onChange={onTypeChanged}
+              value={asFormSelectValue(type.getValue())}
+              id={asId('type')}
+              isDisabled={isDisabled('type')}
+            >
+              <FormSelectPlaceholderOption isDisabled placeholder="--- Select Type ---" />
+              {DiskType.getAll()
+                .filter((dtype) => !dtype.isDeprecated() || dtype === type)
+                .map((t) => (
+                  <FormSelectOption key={t.getValue()} value={t.getValue()} label={t.toString()} />
+                ))}
             </FormSelect>
           </FormRow>
           {source.requiresStorageClass() && (
@@ -614,5 +639,6 @@ export type DiskModalProps = {
   usedDiskNames: Set<string>;
   usedPVCNames: Set<string>;
   editConfig?: UIStorageEditConfig;
+  isVMRunning?: boolean;
 } & ModalComponentProps &
   HandlePromiseProps;
