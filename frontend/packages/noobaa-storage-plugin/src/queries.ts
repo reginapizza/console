@@ -30,6 +30,7 @@ export enum ObjectServiceDashboardQuery {
 export enum DATA_RESILIENCE_QUERIES {
   REBUILD_PROGRESS_QUERY = 'NooBaa_rebuild_progress/100',
   REBUILD_TIME_QUERY = 'NooBaa_rebuild_time',
+  RGW_PROGRESS_QUERY = '(sum(ceph_pool_metadata{name=~".*rgw.*"} *on (job, namesapce, pool_id) group_right(name) ceph_pg_clean) / sum(ceph_pool_metadata{name=~".*rgw.*"} *on (job, namesapce, pool_id) group_right(name) ceph_pg_total))',
 }
 
 export enum ObjectDataReductionQueries {
@@ -60,11 +61,11 @@ export const breakdownQueryMap = {
       model: null,
       metric: '',
       queries: {
+        [ObjectServiceDashboardQuery.RGW_TOTAL_USED]:
+          CAPACITY_BREAKDOWN_QUERIES[ObjectServiceDashboardQuery.RGW_TOTAL_USED],
         [ObjectServiceDashboardQuery.NOOBAA_TOTAL_USED]: `sum(${
           CAPACITY_BREAKDOWN_QUERIES[ObjectServiceDashboardQuery.NOOBAA_TOTAL_USED]
         })`,
-        [ObjectServiceDashboardQuery.RGW_TOTAL_USED]:
-          CAPACITY_BREAKDOWN_QUERIES[ObjectServiceDashboardQuery.RGW_TOTAL_USED],
         [ObjectServiceDashboardQuery.OBJECT_STORAGE_TOTAL_USED]:
           CAPACITY_BREAKDOWN_QUERIES[ObjectServiceDashboardQuery.OBJECT_STORAGE_TOTAL_USED],
       },

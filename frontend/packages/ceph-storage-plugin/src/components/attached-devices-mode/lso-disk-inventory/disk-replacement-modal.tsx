@@ -15,16 +15,15 @@ import {
   SecretKind,
 } from '@console/internal/module/k8s';
 import { TemplateModel, TemplateInstanceModel, SecretModel } from '@console/internal/models';
-import { CEPH_STORAGE_NAMESPACE } from '../../../constants';
-
-const OSD_REMOVAL_TEMPLATE = 'ocs-osd-removal';
+import { CEPH_STORAGE_NAMESPACE, OSD_REMOVAL_TEMPLATE } from '../../../constants';
+import { OCSDiskList, OCSColumnStateAction, ActionType, Status } from './state-reducer';
 
 const createTemplateSecret = async (template: TemplateKind, osdId: string) => {
   const parametersSecret: SecretKind = {
     apiVersion: SecretModel.apiVersion,
     kind: SecretModel.kind,
     metadata: {
-      name: `${OSD_REMOVAL_TEMPLATE}-parameters`,
+      generateName: `${OSD_REMOVAL_TEMPLATE}-${osdId}-`,
       namespace: CEPH_STORAGE_NAMESPACE,
     },
     stringData: {
@@ -34,13 +33,22 @@ const createTemplateSecret = async (template: TemplateKind, osdId: string) => {
   return k8sCreate(SecretModel, parametersSecret);
 };
 
-const createTemplateInstance = async (parametersSecret: SecretKind, template: TemplateKind) => {
+const createTemplateInstance = async (
+  parametersSecret: SecretKind,
+  template: TemplateKind,
+  osd: string,
+  disk: string,
+) => {
   const templateInstance: TemplateInstanceKind = {
     apiVersion: apiVersionForModel(TemplateInstanceModel),
     kind: TemplateInstanceModel.kind,
     metadata: {
-      name: `${OSD_REMOVAL_TEMPLATE}-template-instance`,
+      generateName: `${OSD_REMOVAL_TEMPLATE}-${osd}-`,
       namespace: CEPH_STORAGE_NAMESPACE,
+      annotations: {
+        disk,
+        osd,
+      },
     },
     spec: {
       secret: {
@@ -52,18 +60,18 @@ const createTemplateInstance = async (parametersSecret: SecretKind, template: Te
   return k8sCreate(TemplateInstanceModel, templateInstance);
 };
 
-const instantiateTemplate = async (osdId: string) => {
+const instantiateTemplate = async (osdId: string, diskName: string) => {
   const osdRemovalTemplate = await k8sGet(
     TemplateModel,
     OSD_REMOVAL_TEMPLATE,
     CEPH_STORAGE_NAMESPACE,
   );
   const templateSecret = await createTemplateSecret(osdRemovalTemplate, osdId);
-  await createTemplateInstance(templateSecret, osdRemovalTemplate);
+  await createTemplateInstance(templateSecret, osdRemovalTemplate, osdId, diskName);
 };
 
 const DiskReplacementAction = (props: DiskReplacementActionProps) => {
-  const { diskName, osdId, cancel, close } = props;
+  const { diskName, alertsMap, replacementMap, isRebalancing, dispatch, cancel, close } = props;
 
   const [inProgress, setProgress] = React.useState(false);
   const [errorMessage, setError] = React.useState('');
@@ -71,11 +79,23 @@ const DiskReplacementAction = (props: DiskReplacementActionProps) => {
   const handleSubmit = (event) => {
     event.preventDefault();
     setProgress(true);
-    /*
-     * TODO:(Afreen) Add validations based on ocs status (part of followup PR)
-     */
     try {
-      instantiateTemplate(osdId);
+      const { status, osd } = alertsMap[diskName];
+      const replacementStatus = replacementMap[diskName]?.status;
+      if (isRebalancing && status !== Status.Offline)
+        throw new Error('replacement disallowed: rebalancing is in progress');
+      else if (
+        replacementStatus === Status.PreparingToReplace ||
+        replacementStatus === Status.ReplacementReady
+      )
+        throw new Error(`replacement disallowed: disk "${diskName}" is "${replacementStatus}"`);
+      else {
+        instantiateTemplate(osd, diskName);
+        dispatch({
+          type: ActionType.SET_REPLACEMENT_MAP,
+          payload: { [diskName]: { osd, status: Status.PreparingToReplace } },
+        });
+      }
       close();
     } catch (err) {
       setError(err.message);
@@ -107,5 +127,8 @@ export const diskReplacementModal = createModalLauncher(DiskReplacementAction);
 
 export type DiskReplacementActionProps = {
   diskName: string;
-  osdId: string;
+  isRebalancing: boolean;
+  alertsMap: OCSDiskList;
+  replacementMap: OCSDiskList;
+  dispatch: React.Dispatch<OCSColumnStateAction>;
 } & ModalComponentProps;

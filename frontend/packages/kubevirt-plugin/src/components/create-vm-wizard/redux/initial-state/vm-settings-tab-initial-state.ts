@@ -39,6 +39,10 @@ export const getInitialVmSettings = (data: CommonData): VMSettings => {
       value: false,
       isHidden: hiddenByOperatingSystem,
     },
+    [VMSettingsField.MOUNT_WINDOWS_GUEST_TOOLS]: {
+      value: false,
+      isHidden: asHidden(true, VMSettingsField.OPERATING_SYSTEM),
+    },
     [VMSettingsField.FLAVOR]: {
       isRequired: asRequired(true),
     },
@@ -63,11 +67,9 @@ export const getInitialVmSettings = (data: CommonData): VMSettings => {
     },
     [VMSettingsField.CONTAINER_IMAGE]: {
       isHidden: hiddenByProviderOrCloneCommonBaseDiskImage,
-      skipValidation: true, // validated in storage tab
     },
     [VMSettingsField.IMAGE_URL]: {
       isHidden: hiddenByProviderOrCloneCommonBaseDiskImage,
-      skipValidation: true, // validated in storage tab
     },
     [VMSettingsField.START_VM]: {
       value: false,

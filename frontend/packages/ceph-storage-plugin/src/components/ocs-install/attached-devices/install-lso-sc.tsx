@@ -30,7 +30,12 @@ import {
 import { OCSServiceModel } from '../../../models';
 import AttachedDevicesNodeTable from './sc-node-list';
 import { PVsAvailableCapacity } from '../pvs-available-capacity';
-import { OCS_CONVERGED_FLAG, OCS_FLAG, OCS_ATTACHED_DEVICES_FLAG } from '../../../features';
+import {
+  OCS_CONVERGED_FLAG,
+  OCS_FLAG,
+  OCS_ATTACHED_DEVICES_FLAG,
+  OCS_INDEPENDENT_FLAG,
+} from '../../../features';
 import { makeLabelNodesRequest } from '../create-form';
 import { scResource, pvResource } from '../../../constants/resources';
 import { getOCSRequestData } from '../ocs-request-data';
@@ -40,7 +45,11 @@ import {
   StorageClassSection,
   EncryptSection,
 } from '../../../utils/common-ocs-install-el';
-import { filterSCWithNoProv, getAssociatedNodes } from '../../../utils/install';
+import {
+  filterSCWithNoProv,
+  getAssociatedNodes,
+  shouldDeployMinimally,
+} from '../../../utils/install';
 import { getSCAvailablePVs } from '../../../selectors';
 import '../ocs-install.scss';
 import './attached-devices.scss';
@@ -49,6 +58,7 @@ const makeOCSRequest = (
   selectedData: NodeKind[],
   storageClass: StorageClassResourceKind,
   isEncrypted: boolean,
+  isMinimal?: boolean,
 ): Promise<any> => {
   const promises = makeLabelNodesRequest(selectedData);
   const scName = getName(storageClass);
@@ -57,6 +67,7 @@ const makeOCSRequest = (
     defaultRequestSize.BAREMETAL,
     isEncrypted,
     NO_PROVISIONER,
+    isMinimal,
   );
 
   return Promise.all(promises).then(() => k8sCreate(OCSServiceModel, ocsObj));
@@ -82,6 +93,8 @@ export const CreateOCS = withHandlePromise<CreateOCSProps & HandlePromiseProps>(
     scResource,
   );
   const [pvData, pvLoaded, pvLoadError] = useK8sWatchResource<K8sResourceKind[]>(pvResource);
+
+  const isMinimal = shouldDeployMinimally(nodes);
 
   React.useEffect(() => {
     // this is needed to ensure that the useEffect should be called only when setHasNoProvSC is defined
@@ -124,9 +137,10 @@ export const CreateOCS = withHandlePromise<CreateOCSProps & HandlePromiseProps>(
   const submit = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     // eslint-disable-next-line promise/catch-or-return
-    handlePromise(makeOCSRequest(nodes, storageClass, isEncrypted)).then(() => {
+    handlePromise(makeOCSRequest(nodes, storageClass, isEncrypted, isMinimal), () => {
       dispatch(setFlag(OCS_ATTACHED_DEVICES_FLAG, true));
       dispatch(setFlag(OCS_CONVERGED_FLAG, true));
+      dispatch(setFlag(OCS_INDEPENDENT_FLAG, false));
       dispatch(setFlag(OCS_FLAG, true));
       history.push(
         `/k8s/ns/${ns}/clusterserviceversions/${appName}/${referenceForModel(
@@ -162,7 +176,15 @@ export const CreateOCS = withHandlePromise<CreateOCSProps & HandlePromiseProps>(
             <SelectNodesSection
               table={AttachedDevicesNodeTable}
               customData={{ filteredNodes, nodes, setNodes }}
-            />
+            >
+              {isMinimal && (
+                <div className="ceph-ocs-install__minimal-msg">
+                  Since the selected nodes do not satisfy the recommended requirements of 16 CPUs
+                  and 64 GiB of RAM per node, a minimal cluster will be deployed, limited to a
+                  single storage device set.
+                </div>
+              )}
+            </SelectNodesSection>
           </>
         )}
         {storageClass && filteredNodes?.length < minSelectedNode && (
