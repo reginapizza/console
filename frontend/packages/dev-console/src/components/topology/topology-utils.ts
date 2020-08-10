@@ -1,5 +1,10 @@
 import * as _ from 'lodash';
-import { K8sResourceKind, modelFor, referenceFor } from '@console/internal/module/k8s';
+import {
+  K8sResourceKind,
+  K8sResourceKindReference,
+  modelFor,
+  referenceFor,
+} from '@console/internal/module/k8s';
 import { RootState } from '@console/internal/redux';
 import { getRouteWebURL } from '@console/internal/components/routes';
 import { OverviewItem } from '@console/shared';
@@ -101,13 +106,18 @@ export const getTopologyResourceObject = (topologyObject: TopologyDataObject): K
   if (!topologyObject) {
     return null;
   }
-  return _.get(topologyObject, ['resources', 'obj']);
+  return topologyObject.resource || topologyObject.resources?.obj;
 };
 
 export const getResource = (node: Node): K8sResourceKind => {
+  const resource = (node as OdcBaseNode)?.getResource();
+  return resource || getTopologyResourceObject(node?.getData());
+};
+
+export const getResourceKind = (node: Node): K8sResourceKindReference => {
   return node instanceof OdcBaseNode
-    ? (node as OdcBaseNode).getResource()
-    : getTopologyResourceObject(node?.getData());
+    ? (node as OdcBaseNode).getResourceKind()
+    : referenceFor(getTopologyResourceObject(node?.getData()));
 };
 
 export const updateTopologyResourceApplication = (
@@ -127,7 +137,7 @@ export const updateTopologyResourceApplication = (
 
   if (item.getType() === TYPE_OPERATOR_BACKED_SERVICE) {
     _.forEach(itemData.groupResources, (groupResource) => {
-      resources.push(groupResource.getResource());
+      resources.push(groupResource.resource);
     });
   }
 

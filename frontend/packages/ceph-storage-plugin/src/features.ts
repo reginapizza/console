@@ -20,6 +20,7 @@ import {
 
 export const OCS_INDEPENDENT_FLAG = 'OCS_INDEPENDENT';
 export const OCS_CONVERGED_FLAG = 'OCS_CONVERGED';
+/* INFO: Flag OCS_ATTACHED_DEVICES_FLAG used in local-storage-plugin without import */
 export const OCS_ATTACHED_DEVICES_FLAG = 'OCS_ATTACHED_DEVICES';
 // Used to activate NooBaa dashboard
 export const OCS_FLAG = 'OCS';
@@ -51,15 +52,19 @@ const handleError = (res: any, flags: string[], dispatch: Dispatch, cb: FeatureD
 export const detectRGW: FeatureDetector = async (dispatch) => {
   let id = null;
   const logicHandler = () =>
-    k8sList(StorageClassModel).then((data: StorageClassResourceKind[]) => {
-      const isRGWPresent = data.some((sc) => sc.provisioner === RGW_PROVISIONER);
-      if (isRGWPresent) {
-        dispatch(setFlag(RGW_FLAG, true));
+    k8sList(StorageClassModel)
+      .then((data: StorageClassResourceKind[]) => {
+        const isRGWPresent = data.some((sc) => sc.provisioner === RGW_PROVISIONER);
+        if (isRGWPresent) {
+          dispatch(setFlag(RGW_FLAG, true));
+          clearInterval(id);
+        } else {
+          dispatch(setFlag(RGW_FLAG, false));
+        }
+      })
+      .catch(() => {
         clearInterval(id);
-      } else {
-        dispatch(setFlag(RGW_FLAG, false));
-      }
-    });
+      });
   id = setInterval(logicHandler, 10 * SECOND);
 };
 

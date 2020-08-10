@@ -33,8 +33,9 @@ import {
   OCSAlert,
   SelectNodesSection,
   StorageClassSection,
+  EncryptSection,
 } from '../../utils/common-ocs-install-el';
-import { filterSCWithoutNoProv } from '../../utils/install';
+import { filterSCWithoutNoProv, shouldDeployMinimally } from '../../utils/install';
 import { OCS_INTERNAL_CR_NAME } from '../../constants';
 import './ocs-install.scss';
 
@@ -61,10 +62,12 @@ const makeOCSRequest = (
   selectedData: NodeKind[],
   storageClass: StorageClassResourceKind,
   osdSize: string,
+  isEncrypted: boolean,
+  isMinimal?: boolean,
 ): Promise<any> => {
   const promises = makeLabelNodesRequest(selectedData);
   const scName = getName(storageClass);
-  const ocsObj = getOCSRequestData(scName, osdSize);
+  const ocsObj = getOCSRequestData(scName, osdSize, isEncrypted, null, isMinimal);
 
   return Promise.all(promises).then(() => {
     if (!scName) {
@@ -87,13 +90,16 @@ export const CreateInternalCluster = withHandlePromise<
   } = props;
   const [osdSize, setOSDSize] = React.useState(defaultRequestSize.NON_BAREMETAL);
   const [storageClass, setStorageClass] = React.useState<StorageClassResourceKind>(null);
+  const [isEncrypted, setEncrypted] = React.useState(true);
   const dispatch = useDispatch();
   const [nodes, setNodes] = React.useState<NodeKind[]>([]);
+
+  const isMinimal = shouldDeployMinimally(nodes);
 
   const submit = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     // eslint-disable-next-line promise/catch-or-return
-    handlePromise(makeOCSRequest(nodes, storageClass, osdSize)).then(() => {
+    handlePromise(makeOCSRequest(nodes, storageClass, osdSize, isEncrypted), () => {
       dispatch(setFlag(OCS_CONVERGED_FLAG, true));
       dispatch(setFlag(OCS_FLAG, true));
       history.push(
@@ -132,6 +138,7 @@ export const CreateInternalCluster = withHandlePromise<
             data-test-id="osd-dropdown"
           />
         </FormGroup>
+        <EncryptSection onToggle={setEncrypted} isChecked={isEncrypted} />
         <h3 className="co-m-pane__heading co-m-pane__heading--baseline ceph-ocs-install__pane--margin">
           <div className="co-m-pane__name">Nodes</div>
         </h3>
@@ -141,10 +148,18 @@ export const CreateInternalCluster = withHandlePromise<
             onRowSelected: setNodes,
           }}
         >
-          <span>
-            Select at least 3 nodes in different zones you wish to use with minimum requirements of
-            16 CPUs and 64 GiB of RAM per node.
-          </span>
+          <>
+            <div>
+              Select at least 3 nodes in different zones you wish to use. The recommended
+              requirements are 16 CPUs and 64 GiB of RAM per node.
+            </div>
+            {isMinimal && (
+              <div className="ceph-ocs-install__minimal-msg">
+                Since the selected nodes do not satisfy the recommended requirements stated above, a
+                minimal cluster will be deployed, limited to a single storage device set.
+              </div>
+            )}
+          </>
         </SelectNodesSection>
         <ButtonBar errorMessage={errorMessage} inProgress={inProgress}>
           <ActionGroup className="pf-c-form">

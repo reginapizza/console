@@ -31,7 +31,9 @@ export const createDeviceSet = (scName: string, osdSize: string, portable: boole
 export const getOCSRequestData = (
   scName: string,
   storage: string,
+  encrypted?: boolean,
   provisioner?: string,
+  isMinimal?: boolean,
 ): K8sResourceKind => {
   const requestData = {
     apiVersion: 'ocs.openshift.io/v1',
@@ -42,9 +44,29 @@ export const getOCSRequestData = (
     },
     spec: {
       manageNodes: false,
+      encryption: {
+        enable: encrypted,
+      },
       storageDeviceSets: [createDeviceSet(scName, storage, true)],
     },
   } as K8sResourceKind;
+
+  if (isMinimal) {
+    requestData.spec = {
+      resources: {
+        mds: {
+          limits: {
+            cpu: '3',
+            memory: '8Gi',
+          },
+          requests: {
+            cpu: '1',
+            memory: '8Gi',
+          },
+        },
+      },
+    };
+  }
 
   if (provisioner === NO_PROVISIONER) {
     requestData.spec.monDataDirHostPath = '/var/lib/rook';
@@ -66,6 +88,7 @@ export type DeviceSet = {
   resources?: any;
   placement?: any;
   portable: boolean;
+  encryption?: { [key: string]: any };
   dataPVCTemplate: {
     spec: {
       storageClassName: string;

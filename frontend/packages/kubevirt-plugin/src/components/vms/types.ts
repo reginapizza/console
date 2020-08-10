@@ -4,6 +4,17 @@ import { VMGenericLikeEntityKind, VMILikeEntityKind } from '../../types/vmLike';
 import { VMImportKind } from '../../types/vm-import/ovirt/vm-import';
 import { V1alpha1DataVolume } from '../../types/vm/disk/V1alpha1DataVolume';
 
+type PendingChange = {
+  isPendingChange: boolean;
+  execAction: () => void;
+  vmTab?: VMTabEnum;
+  resourceNames?: string[];
+};
+
+export type PendingChanges = {
+  [key: string]: PendingChange;
+};
+
 export type VMTabProps = {
   obj?: VMILikeEntityKind;
   vm?: VMKind;
@@ -22,3 +33,25 @@ export type VMTabProps = {
 export type VMLikeEntityTabProps = {
   obj?: VMGenericLikeEntityKind;
 };
+
+export enum IsPendingChange {
+  flavor = 'Flavor',
+  bootOrder = 'Boot Order',
+  env = 'Environment',
+  nics = 'Network Interfaces',
+  disks = 'Disks',
+}
+
+export enum VMTabURLEnum {
+  details = 'details',
+  env = 'environment',
+  nics = 'nics',
+  disks = 'disks',
+}
+
+export enum VMTabEnum {
+  details = 'Details',
+  env = 'Environment',
+  nics = 'Network Interfaces',
+  disks = 'Disks',
+}
