@@ -82,10 +82,10 @@ const ImportSamplePage: React.FC<ImportSamplePageProps> = ({ match }) => {
       dockerfilePath: 'Dockerfile',
       containerPort: 8080,
     },
-    devfile: {
-      devfilePath: 'devfile.yaml',
-      containerPort: 8080,
-    },
+    // devfile: {
+    //   devfilePath: 'devfile.yaml',
+    //   containerPort: 8080,
+    // },
     image: {
       selected: imageName,
       recommended: '',

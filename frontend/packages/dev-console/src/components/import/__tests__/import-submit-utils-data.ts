@@ -171,10 +171,10 @@ export const defaultData: GitImportFormData = {
     dockerfilePath: 'Dockerfile',
     containerPort: 8080,
   },
-  devfile: {
-    devfilePath: 'devfile.yaml',
-    containerPort: 8080,
-  },
+  // devfile: {
+  //   devfilePath: 'devfile.yaml',
+  //   containerPort: 8080,
+  // },
   pipeline: {
     enabled: false,
     template: mockPipelineTemplate,

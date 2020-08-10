@@ -341,10 +341,10 @@ export const getGitAndDevfileInitialValues = (
       ),
       containerPort: parseInt(_.split(_.get(route, 'spec.port.targetPort'), '-')[0], 10),
     },
-    devfile: {
-      devfilePath: _.get(buildConfig, 'spec.strategy.devfileStrategy.devfilePath', 'Devfile'),
-      containerPort: parseInt(_.split(_.get(route, 'spec.port.targetPort'), '-')[0], 10),
-    },
+    // devfile: {
+    //   devfilePath: _.get(buildConfig, 'spec.strategy.devfileStrategy.devfilePath', 'Devfile'),
+    //   containerPort: parseInt(_.split(_.get(route, 'spec.port.targetPort'), '-')[0], 10),
+    // },
     image: {
       selected: currentImage[0] || '',
       recommended: '',
