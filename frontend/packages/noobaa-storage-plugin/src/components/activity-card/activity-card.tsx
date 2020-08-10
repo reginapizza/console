@@ -17,7 +17,6 @@ import {
   withDashboardResources,
 } from '@console/internal/components/dashboard/with-dashboard-resources';
 import { getResiliencyProgress } from '@console/ceph-storage-plugin/src/utils';
-import { CephObjectStoreModel } from '@console/ceph-storage-plugin/src/models';
 import { DATA_RESILIENCE_QUERIES } from '../../queries';
 import {
   NooBaaBackingStoreModel,
@@ -28,23 +27,22 @@ import './activity-card.scss';
 
 const eventsResource: FirehoseResource = { isList: true, kind: EventModel.kind, prop: 'events' };
 
-const isObjectStorageEvent = (event: EventKind): boolean => {
+const isNoobaaEventObject = (event: EventKind): boolean => {
   const eventName: string = event?.involvedObject?.name;
-  return _.startsWith(eventName, 'noobaa') || eventName.includes('rgw');
+  return _.startsWith(eventName, 'noobaa');
 };
 
-const objectStorageEventsFilter = (event: EventKind): boolean => {
+const noobaaEventsFilter = (event: EventKind): boolean => {
   const eventKind: string = event?.involvedObject?.kind;
-  const objectStorageResources = [
+  const noobaaResources = [
     NooBaaBackingStoreModel.kind,
     NooBaaBucketClassModel.kind,
     NooBaaObjectBucketClaimModel.kind,
-    CephObjectStoreModel.kind,
   ];
   if (eventKind === PodModel.kind || eventKind === StatefulSetModel.kind) {
-    return isObjectStorageEvent(event);
+    return isNoobaaEventObject(event);
   }
-  return objectStorageResources.includes(eventKind);
+  return noobaaResources.includes(eventKind);
 };
 
 const RecentEvent = withDashboardResources(
@@ -58,7 +56,7 @@ const RecentEvent = withDashboardResources(
     return (
       <RecentEventsBody
         events={resources.events as FirehoseResult<EventKind[]>}
-        filter={objectStorageEventsFilter}
+        filter={noobaaEventsFilter}
       />
     );
   },
@@ -69,11 +67,9 @@ const OngoingActivity = withDashboardResources(
     React.useEffect(() => {
       watchPrometheus(DATA_RESILIENCE_QUERIES.REBUILD_PROGRESS_QUERY);
       watchPrometheus(DATA_RESILIENCE_QUERIES.REBUILD_TIME_QUERY);
-      watchPrometheus(DATA_RESILIENCE_QUERIES.RGW_PROGRESS_QUERY);
       return () => {
         stopWatchPrometheusQuery(DATA_RESILIENCE_QUERIES.REBUILD_PROGRESS_QUERY);
         stopWatchPrometheusQuery(DATA_RESILIENCE_QUERIES.REBUILD_TIME_QUERY);
-        stopWatchPrometheusQuery(DATA_RESILIENCE_QUERIES.RGW_PROGRESS_QUERY);
       };
     }, [watchPrometheus, stopWatchPrometheusQuery]);
 
@@ -91,16 +87,6 @@ const OngoingActivity = withDashboardResources(
       'data',
     ]) as PrometheusResponse;
 
-    const rgwProgress = prometheusResults.getIn([
-      DATA_RESILIENCE_QUERIES.REBUILD_PROGRESS_QUERY,
-      'data',
-    ]) as PrometheusResponse;
-
-    const rgwProgressError = prometheusResults.getIn([
-      DATA_RESILIENCE_QUERIES.REBUILD_PROGRESS_QUERY,
-      'loadError',
-    ]);
-
     const prometheusActivities = [];
 
     if (getResiliencyProgress(progress) < 1) {
@@ -113,19 +99,9 @@ const OngoingActivity = withDashboardResources(
       });
     }
 
-    if (getResiliencyProgress(rgwProgress) < 1) {
-      prometheusActivities.push({
-        results: [rgwProgress],
-        loader: () =>
-          import('./data-resiliency-activity/data-resiliency-activity').then(
-            (m) => m.NoobaaDataResiliency,
-          ),
-      });
-    }
-
     return (
       <OngoingActivityBody
-        loaded={progress || progressError || rgwProgress || rgwProgressError}
+        loaded={progress || progressError}
         prometheusActivities={prometheusActivities}
       />
     );

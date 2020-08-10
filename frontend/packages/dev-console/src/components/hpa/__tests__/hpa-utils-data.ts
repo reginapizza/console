@@ -625,9 +625,9 @@ export const hpaExamples: { [key: string]: HorizontalPodAutoscalerKind } = {
     },
     spec: {
       scaleTargetRef: {
-        kind: 'DeploymentConfig',
+        kind: 'Deployment',
         name: 'nodejs-rest-http-crud-resource-limits',
-        apiVersion: 'apps.openshift.io/v1',
+        apiVersion: 'apps/v1',
       },
       minReplicas: 2,
       maxReplicas: 10,

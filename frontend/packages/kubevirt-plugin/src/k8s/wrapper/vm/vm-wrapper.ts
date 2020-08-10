@@ -17,6 +17,7 @@ import {
 } from '../../../selectors/vm/selectors';
 import { VMWizardNetwork, VMWizardStorage } from '../../../components/create-vm-wizard/types';
 import { VMILikeMethods } from './types';
+import { transformDevices } from '../../../selectors/vm';
 import { findKeySuffixValue } from '../../../selectors/utils';
 import {
   TEMPLATE_FLAVOR_LABEL,
@@ -30,7 +31,6 @@ import { V1Volume } from '../../../types/vm/disk/V1Volume';
 import { V1alpha1DataVolume } from '../../../types/vm/disk/V1alpha1DataVolume';
 import { VirtualMachineImportModel, VirtualMachineModel } from '../../../models';
 import { buildOwnerReferenceForModel } from '../../../utils';
-import { transformDevices } from '../../../selectors/vm/devices';
 
 export class VMWrapper extends K8sResourceWrapper<VMKind, VMWrapper> implements VMILikeMethods {
   constructor(vm?: VMKind | VMWrapper | any, copy = false) {
@@ -60,27 +60,20 @@ export class VMWrapper extends K8sResourceWrapper<VMKind, VMWrapper> implements 
 
   getVolumes = (defaultValue = []) => getVolumes(this.data, defaultValue);
 
-  getVolumesOfDisks = (disks: V1Disk[]): V1Volume[] => {
-    const diskNames = disks.map((disk) => disk?.name);
-    return this.getVolumes().filter((vol) => diskNames.includes(vol.name));
-  };
-
   getLabeledDevices = () => transformDevices(this.getDisks(), this.getNetworkInterfaces());
 
   getNodeSelector = () => getNodeSelector(this.data);
 
   getTolerations = () => getTolerations(this.data);
 
-  getVolumesByType = (volType: VolumeType): V1Volume[] =>
-    this.getVolumes().filter((vol) => new VolumeWrapper(vol).getType() === volType);
+  getConfigMaps = () => this.getVolumes().filter((vol) => Object.keys(vol).includes('configMap'));
 
-  getConfigMaps = (): V1Volume[] => this.getVolumesByType(VolumeType.CONFIG_MAP);
+  getSecrets = () => this.getVolumes().filter((vol) => Object.keys(vol).includes('secret'));
 
-  getSecrets = (): V1Volume[] => this.getVolumesByType(VolumeType.SECRET);
+  getServiceAccounts = () =>
+    this.getVolumes().filter((vol) => Object.keys(vol).includes('serviceAccount'));
 
-  getServiceAccounts = (): V1Volume[] => this.getVolumesByType(VolumeType.SERVICE_ACCOUNT);
-
-  getDiskSerial = (diskName: string) => {
+  getDiskSerial = (diskName) => {
     const disk = this.getDisks().find((d) => d.name === diskName);
     return disk && Object.keys(disk).includes('serial') && disk.serial;
   };

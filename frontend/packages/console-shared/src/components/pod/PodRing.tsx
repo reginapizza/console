@@ -3,8 +3,7 @@ import * as _ from 'lodash';
 import { Button, Split, SplitItem, Bullseye } from '@patternfly/react-core';
 import { K8sResourceKind, k8sPatch, K8sKind } from '@console/internal/module/k8s';
 import { AngleUpIcon, AngleDownIcon } from '@patternfly/react-icons';
-import { useRelatedHPA } from '@console/dev-console/src/components/hpa/hooks';
-import { hpaPodRingLabel, podRingLabel, usePodScalingAccessStatus } from '../../utils';
+import { podRingLabel, usePodScalingAccessStatus } from '../../utils';
 import { ExtPodKind } from '../../types';
 import PodStatus from './PodStatus';
 import './PodRing.scss';
@@ -29,7 +28,7 @@ const PodRing: React.FC<PodRingProps> = ({
   enableScaling = true,
 }) => {
   const [clickCount, setClickCount] = React.useState(obj.spec.replicas);
-  const isAccessScalingAllowed = usePodScalingAccessStatus(
+  const isScalingAllowed = usePodScalingAccessStatus(
     obj,
     resourceKind,
     pods,
@@ -68,21 +67,8 @@ const PodRing: React.FC<PodRingProps> = ({
     setClickCount(clickCount + operation);
     handleScaling(clickCount + operation);
   };
-
-  const {
-    apiVersion,
-    kind,
-    metadata: { name, namespace },
-  } = obj;
-  const [hpa] = useRelatedHPA(apiVersion, kind, name, namespace);
-  const hpaControlledScaling = !!hpa;
-
-  const isScalingAllowed = isAccessScalingAllowed && !hpaControlledScaling;
-
   const resourceObj = rc || obj;
-  const { title, subTitle, titleComponent } = hpaControlledScaling
-    ? hpaPodRingLabel(resourceObj, hpa, pods)
-    : podRingLabel(resourceObj, kind, pods);
+  const { title, subTitle, titleComponent } = podRingLabel(resourceObj, obj.kind, pods);
 
   return (
     <Split>

@@ -1,9 +1,9 @@
-import { getQuickStartByName } from '../utils/quick-start-utils';
-import { allQuickStarts } from '../data/quick-start-data';
+import { mockQuickStarts } from '../utils/quick-start-mocks';
+import { getQuickStart } from '../utils/quick-start-utils';
 
 describe('quick-start-utils', () => {
   it('should return the quick start corresponding to the id', () => {
-    const mockID = allQuickStarts[0].metadata.name;
-    expect(getQuickStartByName(mockID).metadata.name === mockID).toBe(true);
+    const mockID = mockQuickStarts[0].id;
+    expect(getQuickStart(mockID).id === mockID).toBe(true);
   });
 });

@@ -27,15 +27,7 @@ import { useStorageClassConfigMapWrapped } from '../../../hooks/storage-class-co
 import { isTemplate } from '../../../selectors/check-type';
 
 const DiskModalFirehoseComponent: React.FC<DiskModalFirehoseComponentProps> = (props) => {
-  const {
-    disk,
-    volume,
-    dataVolume,
-    vmLikeEntity,
-    vmLikeEntityLoading,
-    isVMRunning,
-    ...restProps
-  } = props;
+  const { disk, volume, dataVolume, vmLikeEntity, vmLikeEntityLoading, ...restProps } = props;
 
   const vmLikeFinal = getLoadedData(vmLikeEntityLoading, vmLikeEntity); // default old snapshot before loading a new one
 
@@ -75,7 +67,6 @@ const DiskModalFirehoseComponent: React.FC<DiskModalFirehoseComponentProps> = (p
       volume={new VolumeWrapper(volumeWrapper, true)}
       dataVolume={new DataVolumeWrapper(dataVolumeWrapper, true)}
       onSubmit={onSubmit}
-      isVMRunning={isVMRunning}
     />
   );
 };
@@ -92,7 +83,6 @@ type DiskModalFirehoseComponentProps = ModalComponentProps & {
   vmLikeEntityLoading?: FirehoseResult<VMLikeEntityKind>;
   vmLikeEntity: VMLikeEntityKind;
   templateValidations?: TemplateValidations;
-  isVMRunning?: boolean;
 };
 
 const DiskModalFirehose: React.FC<DiskModalFirehoseProps> = (props) => {
@@ -152,7 +142,6 @@ type DiskModalFirehoseProps = ModalComponentProps & {
   useProjects: boolean;
   templateValidations?: TemplateValidations;
   isTemplate?: boolean;
-  isVMRunning?: boolean;
 };
 
 const diskModalStateToProps = ({ k8s }) => {

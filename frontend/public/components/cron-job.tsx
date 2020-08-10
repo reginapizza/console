@@ -59,7 +59,6 @@ const CronJobTableHeader = () => {
       sortField: 'metadata.namespace',
       transforms: [sortable],
       props: { className: tableColumnClasses[1] },
-      id: 'namespace',
     },
     {
       title: 'Schedule',
@@ -98,10 +97,7 @@ const CronJobTableRow: RowFunction<CronJobKind> = ({ obj: cronjob, index, key, s
           namespace={cronjob.metadata.namespace}
         />
       </TableData>
-      <TableData
-        className={classNames(tableColumnClasses[1], 'co-break-word')}
-        columnID="namespace"
-      >
+      <TableData className={classNames(tableColumnClasses[1], 'co-break-word')}>
         <ResourceLink
           kind="Namespace"
           name={cronjob.metadata.namespace}

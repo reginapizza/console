@@ -24,7 +24,6 @@ import {
   useDisplayFilters,
   getResource,
   useSearchFilter,
-  useAllowEdgeCreation,
   NODE_SHADOW_FILTER_ID,
   NODE_SHADOW_FILTER_ID_HOVER,
   NodeShadows,
@@ -78,7 +77,6 @@ const ObservedVmNode: React.FC<VmNodeProps> = ({
   const vmData = element.getData().data;
   const { kind, osImage, vmStatusBundle } = vmData;
   const displayFilters = useDisplayFilters();
-  const allowEdgeCreation = useAllowEdgeCreation();
   const [filtered] = useSearchFilter(element.getLabel());
   const iconRadius = Math.min(width, height) * 0.25;
   const showLabelsFilter = getFilterById(SHOW_LABELS_FILTER_ID, displayFilters);
@@ -95,14 +93,14 @@ const ObservedVmNode: React.FC<VmNodeProps> = ({
   });
 
   React.useLayoutEffect(() => {
-    if (editAccess && allowEdgeCreation) {
+    if (editAccess) {
       if (hover) {
         onShowCreateConnector && onShowCreateConnector();
       } else {
         onHideCreateConnector && onHideCreateConnector();
       }
     }
-  }, [hover, onShowCreateConnector, onHideCreateConnector, editAccess, allowEdgeCreation]);
+  }, [hover, onShowCreateConnector, onHideCreateConnector, editAccess]);
 
   let statusClass;
   const statusMessage = vmStatusBundle.message;

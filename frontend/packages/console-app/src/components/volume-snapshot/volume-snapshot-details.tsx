@@ -20,8 +20,6 @@ import { Status } from '@console/shared';
 import { volumeSnapshotStatus } from '../../status';
 
 const { editYaml, events } = navFactory;
-const { common, RestorePVC } = Kebab.factory;
-const menuActions = [RestorePVC, ...common];
 
 const Details: React.FC<DetailsProps> = ({ obj }) => {
   const { namespace } = obj.metadata || {};
@@ -97,7 +95,7 @@ const VolumeSnapshotDetailsPage: React.FC<DetailsPageProps> = (props) => (
   <DetailsPage
     {...props}
     getResourceStatus={volumeSnapshotStatus}
-    menuActions={menuActions}
+    menuActions={Kebab.factory.common}
     pages={pages}
   />
 );

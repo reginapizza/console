@@ -61,7 +61,7 @@ export const DeleteDiskModal = withHandlePromise((props: DeleteDiskModalProps) =
       vmLikeEntity,
       getRemoveDiskPatches(vmLikeEntity, disk),
     ).then(() => freeOwnedResources(ownedResources, vmLikeReference, deleteReferencedResource));
-    return handlePromise(promise, close);
+    return handlePromise(promise).then(close);
   };
 
   return (

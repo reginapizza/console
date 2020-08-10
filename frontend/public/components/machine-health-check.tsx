@@ -44,7 +44,6 @@ const MachineHealthCheckTableHeader = () => {
       sortField: 'metadata.namespace',
       transforms: [sortable],
       props: { className: tableColumnClasses[1] },
-      id: 'namespace',
     },
     {
       title: 'Created',
@@ -70,10 +69,7 @@ const MachineHealthCheckTableRow: RowFunction<K8sResourceKind> = ({ obj, index, 
           namespace={obj.metadata.namespace}
         />
       </TableData>
-      <TableData
-        className={classNames(tableColumnClasses[1], 'co-break-word')}
-        columnID="namespace"
-      >
+      <TableData className={classNames(tableColumnClasses[1], 'co-break-word')}>
         <ResourceLink kind="Namespace" name={obj.metadata.namespace} />
       </TableData>
       <TableData className={tableColumnClasses[2]}>

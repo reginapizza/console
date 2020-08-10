@@ -72,7 +72,6 @@ const JobTableHeader = () => {
       sortField: 'metadata.namespace',
       transforms: [sortable],
       props: { className: tableColumnClasses[1] },
-      id: 'namespace',
     },
     {
       title: 'Labels',
@@ -112,10 +111,7 @@ const JobTableRow: RowFunction<JobKind> = ({ obj: job, index, key, style }) => {
           title={job.metadata.uid}
         />
       </TableData>
-      <TableData
-        className={classNames(tableColumnClasses[1], 'co-break-word')}
-        columnID="namespace"
-      >
+      <TableData className={classNames(tableColumnClasses[1], 'co-break-word')}>
         <ResourceLink
           kind="Namespace"
           name={job.metadata.namespace}

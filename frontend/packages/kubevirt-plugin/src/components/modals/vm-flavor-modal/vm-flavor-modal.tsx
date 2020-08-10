@@ -23,7 +23,6 @@ import {
   getMemory,
   getVMLikeModel,
   vCPUCount,
-  isVMRunningOrExpectedRunning,
 } from '../../../selectors/vm';
 import { getUpdateFlavorPatches } from '../../../k8s/patches/vm/vm-patches';
 import { CUSTOM_FLAVOR } from '../../../constants';
@@ -41,12 +40,6 @@ import { flavorSort } from '../../../utils/sort';
 import { getTemplateFlavors } from '../../../selectors/vm-template/advanced';
 import { getVMTemplateNamespacedName } from '../../../selectors/vm-template/selectors';
 import { toUIFlavor, isCustomFlavor } from '../../../selectors/vm-like/flavor';
-import { PendingChangesAlert } from '../../Alerts/PendingChangesAlert';
-import { getNamespace, getName } from '@console/shared';
-import { VirtualMachineInstanceModel } from '../../../models';
-import { VMIKind } from '../../../types/vm';
-import { MODAL_RESTART_IS_REQUIRED } from '../../../strings/vm/status';
-import { saveAndRestartModal } from '../save-and-restart-modal/save-and-restart-modal';
 
 const getId = (field: string) => `vm-flavor-modal-${field}`;
 
@@ -58,22 +51,10 @@ const getAvailableFlavors = (template: TemplateKind) => {
 };
 
 const VMFlavorModal = withHandlePromise((props: VMFlavornModalProps) => {
-  const {
-    vmLike,
-    template,
-    errorMessage,
-    handlePromise,
-    close,
-    cancel,
-    loadError,
-    loaded,
-    vmi: vmiProp,
-  } = props;
-
+  const { vmLike, template, errorMessage, handlePromise, close, cancel, loadError, loaded } = props;
   const inProgress = props.inProgress || !loaded;
   const vm = asVM(vmLike);
   const underlyingTemplate = getLoadedData(template);
-  const vmi = getLoadedData(vmiProp);
 
   const flavors = getAvailableFlavors(underlyingTemplate);
   const vmFlavor = toUIFlavor(getFlavor(vmLike) || flavors[flavors.length - 1]);
@@ -102,7 +83,9 @@ const VMFlavorModal = withHandlePromise((props: VMFlavornModalProps) => {
 
   const [showUIError, setShowUIError] = useShowErrorToggler(false, isValid, isValid);
 
-  const saveChanges = () => {
+  const submit = (e) => {
+    e.preventDefault();
+
     if (isValid) {
       const patches = getUpdateFlavorPatches(
         vmLike,
@@ -113,7 +96,7 @@ const VMFlavorModal = withHandlePromise((props: VMFlavornModalProps) => {
       );
       if (patches.length > 0) {
         const promise = k8sPatch(getVMLikeModel(vmLike), vmLike, patches);
-        handlePromise(promise, close);
+        handlePromise(promise).then(close); // eslint-disable-line promise/catch-or-return
       } else {
         close();
       }
@@ -122,18 +105,10 @@ const VMFlavorModal = withHandlePromise((props: VMFlavornModalProps) => {
     }
   };
 
-  const submit = (e) => {
-    e.preventDefault();
-    saveChanges();
-  };
-
   return (
     <div className="modal-content">
       <ModalTitle>Edit Flavor</ModalTitle>
       <ModalBody>
-        {isVMRunningOrExpectedRunning(vm) && (
-          <PendingChangesAlert warningMsg={MODAL_RESTART_IS_REQUIRED} />
-        )}
         <Form>
           <FormRow title="Flavor" fieldId={getId('flavor')} isRequired>
             <FormSelect
@@ -203,14 +178,12 @@ const VMFlavorModal = withHandlePromise((props: VMFlavornModalProps) => {
         isSimpleError={showUIError}
         isDisabled={inProgress}
         inProgress={inProgress}
-        isSaveAndRestart={isVMRunningOrExpectedRunning(vm)}
         onSubmit={submit}
         submitButtonText="Save"
         onCancel={(e) => {
           e.stopPropagation();
           cancel();
         }}
-        onSaveAndRestart={() => saveAndRestartModal(vm, vmi, saveChanges)}
       />
     </div>
   );
@@ -231,14 +204,6 @@ const VMFlavorModalFirehose = (props) => {
       prop: 'template',
     });
   }
-
-  resources.push({
-    kind: VirtualMachineInstanceModel.kind,
-    namespace: getNamespace(vmLike),
-    name: getName(vmLike),
-    prop: 'vmi',
-  });
-
   return (
     <Firehose resources={resources}>
       <VMFlavorModal {...props} />
@@ -250,7 +215,6 @@ export type VMFlavornModalProps = HandlePromiseProps &
   ModalComponentProps & {
     vmLike: VMLikeEntityKind;
     template?: FirehoseResult<TemplateKind>;
-    vmi?: FirehoseResult<VMIKind>;
     loadError?: any;
     loaded: boolean;
   };

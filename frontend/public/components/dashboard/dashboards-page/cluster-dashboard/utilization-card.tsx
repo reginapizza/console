@@ -146,6 +146,18 @@ const networkOutQueriesPopup = [
   },
 ];
 
+const mapStatsWithDesc = (
+  stats: PrometheusResponse,
+  description: DataPoint['description'],
+): DataPoint[] =>
+  getRangeVectorStats(stats).map((dp) => {
+    dp.x.setSeconds(0, 0);
+    return {
+      ...dp,
+      description,
+    };
+  });
+
 export const PrometheusUtilizationItem = withDashboardResources<PrometheusUtilizationItemProps>(
   ({
     watchPrometheus,
@@ -166,6 +178,9 @@ export const PrometheusUtilizationItem = withDashboardResources<PrometheusUtiliz
     requestQuery,
     setLimitReqState,
   }) => {
+    let stats: DataPoint[] = [];
+    let limitStats: DataPoint[];
+    let requestStats: DataPoint[];
     let utilization: PrometheusResponse, utilizationError: any;
     let total: PrometheusResponse, totalError: any;
     let max: DataPoint<number>[];
@@ -223,16 +238,25 @@ export const PrometheusUtilizationItem = withDashboardResources<PrometheusUtiliz
         effectiveDuration,
       );
 
+      stats = mapStatsWithDesc(utilization, (date, value) => `${value} at ${date}`);
       max = getInstantVectorStats(total);
+      if (limit) {
+        limitStats = mapStatsWithDesc(limit, (date, value) => `${value} total limit`);
+      }
+      if (request) {
+        requestStats = mapStatsWithDesc(request, (date, value) => `${value} total requested`);
+      }
+
+      setTimestamps && setTimestamps(stats.map((stat) => stat.x as Date));
       isLoading = !utilization || (totalQuery && !total) || (limitQuery && !limit);
     }
 
     return (
       <UtilizationItem
         title={title}
-        utilization={utilization}
-        limit={limit}
-        requested={request}
+        data={stats}
+        limit={limitStats}
+        requested={requestStats}
         error={utilizationError || totalError || limitError || requestError}
         isLoading={isLoading}
         humanizeValue={humanizeValue}
@@ -241,7 +265,6 @@ export const PrometheusUtilizationItem = withDashboardResources<PrometheusUtiliz
         max={max && max.length ? max[0].y : null}
         TopConsumerPopover={TopConsumerPopover}
         setLimitReqState={setLimitReqState}
-        setTimestamps={setTimestamps}
       />
     );
   },
@@ -292,7 +315,7 @@ export const PrometheusMultilineUtilizationItem = withDashboardResources<
     let hasError = false;
     let isLoading = false;
     if (!isDisabled) {
-      queries.forEach((query) => {
+      _.forEach(queries, (query, index) => {
         const [response, responseError] = getPrometheusQueryResponse(
           prometheusResults,
           query.query,
@@ -306,7 +329,12 @@ export const PrometheusMultilineUtilizationItem = withDashboardResources<
           isLoading = true;
           return false;
         }
-        stats.push(getRangeVectorStats(response, query.desc)?.[0] || []);
+        stats.push(
+          mapStatsWithDesc(response, (date, value) => {
+            const text = `${query.desc.toUpperCase()}: ${value}`;
+            return index ? text : `${date}\n${text}`;
+          }),
+        );
       });
     }
 

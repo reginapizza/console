@@ -21,7 +21,6 @@ import {
   nodeDragSourceSpec,
   GroupNode,
   useSearchFilter,
-  useAllowEdgeCreation,
 } from '@console/dev-console/src/components/topology';
 import { TYPE_KNATIVE_SERVICE, EVENT_MARKER_RADIUS } from '../../const';
 
@@ -61,19 +60,18 @@ const KnativeServiceNode: React.FC<KnativeServiceNodeProps> = ({
   );
   const refs = useCombineRefs<SVGRectElement>(hoverRef, dragNodeRef);
   const [filtered] = useSearchFilter(element.getLabel());
-  const allowEdgeCreation = useAllowEdgeCreation();
   const { kind } = element.getData().data;
   const { width, height } = element.getBounds();
 
   React.useLayoutEffect(() => {
-    if (editAccess && allowEdgeCreation) {
+    if (editAccess) {
       if (hover) {
         onShowCreateConnector && onShowCreateConnector();
       } else {
         onHideCreateConnector && onHideCreateConnector();
       }
     }
-  }, [editAccess, hover, onShowCreateConnector, onHideCreateConnector, allowEdgeCreation]);
+  }, [editAccess, hover, onShowCreateConnector, onHideCreateConnector]);
 
   return (
     <g

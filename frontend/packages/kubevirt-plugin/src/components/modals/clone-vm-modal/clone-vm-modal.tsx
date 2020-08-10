@@ -99,7 +99,7 @@ export const CloneVMModal = withHandlePromise((props: CloneVMModalProps) => {
       },
       { name, namespace, description, startVM },
     );
-    handlePromise(promise, close);
+    handlePromise(promise).then(close); // eslint-disable-line promise/catch-or-return
   };
 
   const onCancelClick = (e) => {

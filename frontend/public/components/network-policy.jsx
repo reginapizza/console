@@ -42,7 +42,6 @@ const NetworkPolicyTableHeader = () => {
       sortField: 'metadata.namespace',
       transforms: [sortable],
       props: { className: tableColumnClasses[1] },
-      id: 'namespace',
     },
     {
       title: 'Pod Selector',
@@ -71,10 +70,7 @@ const NetworkPolicyTableRow = ({ obj: np, index, key, style }) => {
           title={np.metadata.name}
         />
       </TableData>
-      <TableData
-        className={classNames(tableColumnClasses[1], 'co-break-word')}
-        columnID="namespace"
-      >
+      <TableData className={classNames(tableColumnClasses[1], 'co-break-word')}>
         <ResourceLink
           kind={'Namespace'}
           name={np.metadata.namespace}

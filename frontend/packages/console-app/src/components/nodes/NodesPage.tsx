@@ -1,19 +1,10 @@
 import * as React from 'react';
 import * as classNames from 'classnames';
-// FIXME upgrading redux types is causing many errors at this time
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
-import { connect, useSelector } from 'react-redux';
+import { connect } from 'react-redux';
 import * as _ from 'lodash';
 import { sortable } from '@patternfly/react-table';
-import {
-  getName,
-  getUID,
-  getNodeRole,
-  getLabels,
-  getNodeMachineNameAndNamespace,
-} from '@console/shared';
-import { NodeModel, MachineModel } from '@console/internal/models';
+import { getName, getUID, getNodeRole } from '@console/shared';
+import { NodeModel } from '@console/internal/models';
 import { NodeKind, referenceForModel } from '@console/internal/module/k8s';
 import {
   Table,
@@ -29,7 +20,6 @@ import {
   Timestamp,
   humanizeBinaryBytes,
   formatCores,
-  LabelList,
 } from '@console/internal/components/utils';
 import { NodeMetrics, setNodeMetrics } from '@console/internal/actions/ui';
 import { PROMETHEUS_BASE_PATH } from '@console/internal/components/graphs';
@@ -39,190 +29,83 @@ import { nodeStatus } from '../../status/node';
 import NodeRoles from './NodeRoles';
 import { menuActions } from './menu-actions';
 import NodeStatus from './NodeStatus';
-import { RootState } from '@console/internal/redux';
 
-const nodeColumnInfo = Object.freeze({
-  name: {
-    classes: '',
-    id: 'name',
-    title: 'Name',
-  },
-  status: {
-    classes: '',
-    id: 'status',
-    title: 'Status',
-  },
-  role: {
-    classes: '',
-    id: 'role',
-    title: 'Role',
-  },
-  pods: {
-    classes: classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
-    id: 'pods',
-    title: 'Pods',
-  },
-  memory: {
-    classes: classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
-    id: 'memory',
-    title: 'Memory',
-  },
-  cpu: {
-    classes: classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
-    id: 'cpu',
-    title: 'CPU',
-  },
-  filesystem: {
-    classes: classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
-    id: 'filesystem',
-    title: 'Filesystem',
-  },
-  created: {
-    classes: classNames('pf-m-hidden', 'pf-m-visible-on-lg'),
-    id: 'created',
-    title: 'Created',
-  },
-  instanceType: {
-    classes: classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
-    id: 'instanceType',
-    title: 'Instance type',
-  },
-  machine: {
-    classes: classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
-    id: 'machine',
-    title: 'Machine',
-  },
-  labels: {
-    classes: classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
-    id: 'labels',
-    title: 'Labels',
-  },
-  zone: {
-    classes: classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
-    id: 'zone',
-    title: 'Zone',
-  },
-});
-
-const columnManagementID = referenceForModel(NodeModel);
-const kind = 'Node';
+const tableColumnClasses = [
+  '',
+  '',
+  '',
+  classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
+  classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
+  classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
+  classNames('pf-m-hidden', 'pf-m-visible-on-xl'),
+  classNames('pf-m-hidden', 'pf-m-visible-on-lg'),
+  Kebab.columnClass,
+];
 
 const NodeTableHeader = () => {
   return [
     {
-      title: nodeColumnInfo.name.title,
-      id: nodeColumnInfo.name.id,
+      title: 'Name',
       sortField: 'metadata.name',
       transforms: [sortable],
-      props: { className: nodeColumnInfo.name.classes },
+      props: { className: tableColumnClasses[0] },
     },
     {
-      title: nodeColumnInfo.status.title,
-      id: nodeColumnInfo.status.id,
+      title: 'Status',
       sortFunc: 'nodeReadiness',
       transforms: [sortable],
-      props: { className: nodeColumnInfo.status.classes },
+      props: { className: tableColumnClasses[1] },
     },
     {
-      title: nodeColumnInfo.role.title,
-      id: nodeColumnInfo.role.id,
+      title: 'Role',
       sortFunc: 'nodeRoles',
       transforms: [sortable],
-      props: { className: nodeColumnInfo.role.classes },
+      props: { className: tableColumnClasses[2] },
     },
     {
-      title: nodeColumnInfo.pods.title,
-      id: nodeColumnInfo.pods.id,
+      title: 'Pods',
       sortFunc: 'nodePods',
       transforms: [sortable],
-      props: { className: nodeColumnInfo.pods.classes },
+      props: { className: tableColumnClasses[3] },
     },
     {
-      title: nodeColumnInfo.memory.title,
-      id: nodeColumnInfo.memory.id,
+      title: 'Memory',
       sortFunc: 'nodeMemory',
       transforms: [sortable],
-      props: { className: nodeColumnInfo.memory.classes },
+      props: { className: tableColumnClasses[4] },
     },
     {
-      title: nodeColumnInfo.cpu.title,
-      id: nodeColumnInfo.cpu.id,
+      title: 'CPU',
       sortFunc: 'nodeCPU',
       transforms: [sortable],
-      props: { className: nodeColumnInfo.cpu.classes },
+      props: { className: tableColumnClasses[5] },
     },
     {
-      title: nodeColumnInfo.filesystem.title,
-      id: nodeColumnInfo.filesystem.id,
+      title: 'Filesystem',
       sortFunc: 'nodeFS',
       transforms: [sortable],
-      props: { className: nodeColumnInfo.filesystem.classes },
+      props: { className: tableColumnClasses[6] },
     },
     {
-      title: nodeColumnInfo.created.title,
-      id: nodeColumnInfo.created.id,
+      title: 'Created',
       sortField: 'metadata.creationTimestamp',
       transforms: [sortable],
-      props: { className: nodeColumnInfo.created.classes },
-    },
-    {
-      title: nodeColumnInfo.instanceType.title,
-      id: nodeColumnInfo.instanceType.id,
-      sortFunc: 'nodeInstanceType',
-      transforms: [sortable],
-      props: { className: nodeColumnInfo.instanceType.classes },
-    },
-    {
-      title: nodeColumnInfo.machine.title,
-      id: nodeColumnInfo.machine.id,
-      sortFunc: 'nodeMachine',
-      transforms: [sortable],
-      props: { className: nodeColumnInfo.machine.classes },
-      additional: true,
-    },
-    {
-      title: nodeColumnInfo.labels.title,
-      id: nodeColumnInfo.labels.id,
-      sortField: 'metadata.labels',
-      transforms: [sortable],
-      props: { className: nodeColumnInfo.labels.classes },
-      additional: true,
-    },
-    {
-      title: nodeColumnInfo.zone.title,
-      id: nodeColumnInfo.zone.id,
-      sortFunc: 'nodeZone',
-      transforms: [sortable],
-      props: { className: nodeColumnInfo.zone.classes },
-      additional: true,
+      props: { className: tableColumnClasses[7] },
     },
     {
       title: '',
-      props: { className: Kebab.columnClass },
+      props: { className: tableColumnClasses[8] },
     },
   ];
 };
 NodeTableHeader.displayName = 'NodeTableHeader';
 
-const getSelectedColumns = () => {
-  return new Set(
-    NodeTableHeader().reduce((acc, column) => {
-      if (column.id && !column.additional) {
-        acc.push(column.id);
-      }
-      return acc;
-    }, []),
-  );
-};
-
 const mapStateToProps = ({ UI }) => ({
   metrics: UI.getIn(['metrics', 'node']),
-  selectedColumns: UI.getIn(['columnManagement']),
 });
 
 type NodesRowMapFromStateProps = {
   metrics: NodeMetrics;
-  selectedColumns: Map<string, Set<string>>;
 };
 
 const NodesTableRow = connect<NodesRowMapFromStateProps, null, NodesTableRowProps>(mapStateToProps)(
@@ -232,7 +115,6 @@ const NodesTableRow = connect<NodesRowMapFromStateProps, null, NodesTableRowProp
     rowKey,
     style,
     metrics,
-    selectedColumns,
   }: NodesTableRowProps & NodesRowMapFromStateProps) => {
     const nodeName = getName(node);
     const nodeUID = getUID(node);
@@ -250,102 +132,27 @@ const NodesTableRow = connect<NodesRowMapFromStateProps, null, NodesTableRowProp
         ? `${humanizeBinaryBytes(usedStrg).string} / ${humanizeBinaryBytes(totalStrg).string}`
         : '-';
     const pods = metrics?.pods?.[nodeName] ?? '-';
-    const machine = getNodeMachineNameAndNamespace(node);
-    const instanceType = node.metadata.labels?.['beta.kubernetes.io/instance-type'];
-    const labels = getLabels(node);
-    const zone = node.metadata.labels?.['topology.kubernetes.io/zone'];
-    const columns = new Set(selectedColumns?.get(columnManagementID) || getSelectedColumns());
     return (
       <TableRow id={nodeUID} index={index} trKey={rowKey} style={style}>
-        <TableData className={nodeColumnInfo.name.classes}>
+        <TableData className={tableColumnClasses[0]}>
           <ResourceLink kind={referenceForModel(NodeModel)} name={nodeName} title={nodeUID} />
         </TableData>
-        <TableData
-          className={nodeColumnInfo.status.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.status.id}
-        >
+        <TableData className={tableColumnClasses[1]}>
           <NodeStatus node={node} showPopovers />
         </TableData>
-        <TableData
-          className={nodeColumnInfo.role.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.role.id}
-        >
+        <TableData className={tableColumnClasses[2]}>
           <NodeRoles node={node} />
         </TableData>
-        <TableData
-          className={nodeColumnInfo.pods.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.pods.id}
-        >
-          {pods}
-        </TableData>
-        <TableData
-          className={nodeColumnInfo.memory.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.memory.id}
-        >
-          {memory}
-        </TableData>
-        <TableData
-          className={nodeColumnInfo.cpu.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.cpu.id}
-        >
+        <TableData className={tableColumnClasses[3]}>{pods}</TableData>
+        <TableData className={tableColumnClasses[4]}>{memory}</TableData>
+        <TableData className={tableColumnClasses[5]}>
           {cores ? `${formatCores(cores)} cores` : '-'}
         </TableData>
-        <TableData
-          className={nodeColumnInfo.filesystem.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.filesystem.id}
-        >
-          {storage}
-        </TableData>
-        <TableData
-          className={nodeColumnInfo.created.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.created.id}
-        >
+        <TableData className={tableColumnClasses[6]}>{storage}</TableData>
+        <TableData className={tableColumnClasses[7]}>
           <Timestamp timestamp={node.metadata.creationTimestamp} />
         </TableData>
-        <TableData
-          className={nodeColumnInfo.instanceType.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.instanceType.id}
-        >
-          {instanceType || '-'}
-        </TableData>
-        <TableData
-          className={nodeColumnInfo.machine.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.machine.id}
-        >
-          {machine ? (
-            <ResourceLink
-              kind={referenceForModel(MachineModel)}
-              name={machine.name}
-              namespace={machine.namespace}
-            />
-          ) : (
-            '-'
-          )}
-        </TableData>
-        <TableData
-          className={nodeColumnInfo.labels.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.labels.id}
-        >
-          <LabelList kind={kind} labels={labels} />
-        </TableData>
-        <TableData
-          className={nodeColumnInfo.zone.classes}
-          columns={columns}
-          columnID={nodeColumnInfo.zone.id}
-        >
-          {zone}
-        </TableData>
-        <TableData className={Kebab.columnClass}>
+        <TableData className={tableColumnClasses[8]}>
           <ResourceKebab
             actions={menuActions}
             kind={referenceForModel(NodeModel)}
@@ -377,16 +184,7 @@ const NodesTable: React.FC<NodesTableProps> = React.memo((props) => {
     ),
     [],
   );
-  return (
-    <Table
-      {...props}
-      columnManagementID={columnManagementID}
-      aria-label="Nodes"
-      Header={NodeTableHeader}
-      Row={Row}
-      virtualize
-    />
-  );
+  return <Table {...props} aria-label="Nodes" Header={NodeTableHeader} Row={Row} virtualize />;
 });
 
 type NodesTableProps = React.ComponentProps<typeof Table> & {
@@ -470,9 +268,6 @@ const NodesPage = connect<{}, MapDispatchToProps>(
   mapDispatchToProps,
 )((props: MapDispatchToProps) => {
   const { setNodeMetrics: setMetrics } = props;
-  const selectedColumns: Set<string> = new Set(
-    useSelector<RootState, string>(({ UI }) => UI.getIn(['columnManagement', columnManagementID])),
-  );
 
   React.useEffect(() => {
     const updateMetrics = () =>
@@ -491,20 +286,7 @@ const NodesPage = connect<{}, MapDispatchToProps>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return (
-    <ListPage
-      {...props}
-      kind={kind}
-      ListComponent={NodesTable}
-      rowFilters={filters}
-      columnLayout={{
-        columns: NodeTableHeader().map((column) => _.pick(column, ['title', 'additional', 'id'])),
-        id: columnManagementID,
-        selectedColumns,
-        type: 'Node',
-      }}
-    />
-  );
+  return <ListPage {...props} kind="Node" ListComponent={NodesTable} rowFilters={filters} />;
 });
 
 type MapDispatchToProps = {

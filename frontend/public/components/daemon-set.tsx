@@ -60,7 +60,6 @@ const DaemonSetTableHeader = () => {
       sortField: 'metadata.namespace',
       transforms: [sortable],
       props: { className: tableColumnClasses[1] },
-      id: 'namespace',
     },
     {
       title: 'Status',
@@ -99,10 +98,7 @@ const DaemonSetTableRow: RowFunction<K8sResourceKind> = ({ obj: daemonset, index
           title={daemonset.metadata.uid}
         />
       </TableData>
-      <TableData
-        className={classNames(tableColumnClasses[1], 'co-break-word')}
-        columnID="namespace"
-      >
+      <TableData className={classNames(tableColumnClasses[1], 'co-break-word')}>
         <ResourceLink
           kind="Namespace"
           name={daemonset.metadata.namespace}

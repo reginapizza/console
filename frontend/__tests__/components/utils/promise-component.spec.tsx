@@ -20,7 +20,9 @@ describe('withHandlePromise', () => {
         {props.inProgress ? (
           <span>Loading...</span>
         ) : (
-          <button onClick={() => props.handlePromise(props.promise)}>Click Me</button>
+          <button onClick={() => props.handlePromise(props.promise).catch(() => null)}>
+            Click Me
+          </button>
         )}
       </div>
     );

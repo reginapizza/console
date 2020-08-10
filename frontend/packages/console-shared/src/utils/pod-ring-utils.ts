@@ -16,7 +16,6 @@ import {
   K8sResourceKind,
   K8sKind,
   SelfSubjectAccessReviewKind,
-  HorizontalPodAutoscalerKind,
 } from '@console/internal/module/k8s';
 import { useSafetyFirst } from '@console/internal/components/safety-first';
 import { PodRCData, PodRingResources, PodRingData, ExtPodKind } from '../types';
@@ -205,23 +204,6 @@ export const podRingLabel = (
         titleComponent: getTitleComponent(titleData.longSubtitle),
       };
   }
-};
-
-export const hpaPodRingLabel = (
-  obj: K8sResourceKind,
-  hpa: HorizontalPodAutoscalerKind,
-  pods: ExtPodKind[],
-): PodRingLabelType => {
-  const desiredPodCount = obj.spec?.replicas;
-  const desiredPods = hpa.status?.desiredReplicas || desiredPodCount;
-  const currentPods = hpa.status?.currentReplicas;
-  const scaling =
-    (!currentPods && !!desiredPods) || !pods.every((p) => p.status?.phase === 'Running');
-  return {
-    title: scaling ? 'Autoscaling' : 'Autoscaled',
-    subTitle: `to ${desiredPods}`,
-    titleComponent: getTitleComponent(false, true),
-  };
 };
 
 export const usePodScalingAccessStatus = (

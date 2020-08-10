@@ -1,26 +1,22 @@
 import * as React from 'react';
 import { Helmet } from 'react-helmet';
 import { PageBody } from '@console/shared';
-import { ErrorPage404 } from '@console/internal/components/error';
-import { LoadingBox, LoadingInline, PageComponentProps } from '@console/internal/components/utils';
+import { LoadingInline, PageComponentProps } from '@console/internal/components/utils';
 import { useK8sWatchResource } from '@console/internal/components/utils/k8s-watch-hook';
-import { getGroupVersionKind, K8sResourceKind } from '@console/internal/module/k8s';
+import { K8sResourceKind } from '@console/internal/module/k8s';
 import { HorizontalPodAutoscalerModel } from '@console/internal/models';
 import NamespacedPage, { NamespacedPageVariants } from '../NamespacedPage';
 import HPAFormikForm from './HPAFormikForm';
 import HPAPageHeader from './HPAPageHeader';
 import { getLimitWarning, VALID_HPA_TARGET_KINDS } from './hpa-utils';
-import { useRelatedHPA } from './hooks';
 
 const HPAPage: React.FC<PageComponentProps> = (props) => {
   const {
     match: {
-      params: { ns, resourceRef, name },
+      params: { ns, kind, name },
     },
   } = props;
-  const breakdown = getGroupVersionKind(resourceRef) || [];
-  const [group, version, kind] = breakdown;
-  const [hpa, hpaLoaded, hpaError] = useRelatedHPA(`${group}/${version}`, kind, name, ns);
+
   const resource = React.useMemo(
     () => ({
       kind,
@@ -29,46 +25,28 @@ const HPAPage: React.FC<PageComponentProps> = (props) => {
     }),
     [kind, ns, name],
   );
-  const [data, workloadLoaded, workloadError] = useK8sWatchResource<K8sResourceKind>(resource);
-
-  const fullyLoaded = hpaLoaded && workloadLoaded;
-  const error = hpaError || workloadError?.message;
+  const [data, loaded, loadError] = useK8sWatchResource<K8sResourceKind>(resource);
 
   const validSupportedType = VALID_HPA_TARGET_KINDS.includes(kind);
-  const title = `${hpa ? 'Edit' : 'Add'} ${HorizontalPodAutoscalerModel.label}`;
-
-  if (!breakdown) {
-    return <ErrorPage404 />;
-  }
-
+  const title = `Add ${HorizontalPodAutoscalerModel.label}`;
   return (
     <NamespacedPage disabled variant={NamespacedPageVariants.light} hideApplications>
       <Helmet>
-        <title>{fullyLoaded ? title : HorizontalPodAutoscalerModel.label}</title>
+        <title>{title}</title>
       </Helmet>
-      {fullyLoaded || error ? (
-        <PageBody flexLayout>
-          <HPAPageHeader
-            kind={kind}
-            limitWarning={workloadLoaded && validSupportedType ? getLimitWarning(data) : null}
-            loadError={error}
-            name={name}
-            title={title}
-            validSupportedType={validSupportedType}
-          />
-          {!error && validSupportedType && (
-            <>
-              {fullyLoaded ? (
-                <HPAFormikForm existingHPA={hpa} targetResource={data} />
-              ) : (
-                <LoadingInline />
-              )}
-            </>
-          )}
-        </PageBody>
-      ) : (
-        <LoadingBox />
-      )}
+      <PageBody flexLayout>
+        <HPAPageHeader
+          kind={kind}
+          limitWarning={loaded && validSupportedType ? getLimitWarning(data) : null}
+          loadError={loadError ? loadError.message : null}
+          name={name}
+          title={title}
+          validSupportedType={validSupportedType}
+        />
+        {!loadError && validSupportedType && (
+          <>{loaded ? <HPAFormikForm targetResource={data} /> : <LoadingInline />}</>
+        )}
+      </PageBody>
     </NamespacedPage>
   );
 };

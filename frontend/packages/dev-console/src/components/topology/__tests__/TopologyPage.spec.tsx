@@ -4,11 +4,11 @@ import { Link } from 'react-router-dom';
 import { Tooltip } from '@patternfly/react-core';
 import { TopologyPage, renderTopology } from '../TopologyPage';
 import NamespacedPage from '../../NamespacedPage';
-import { StatusBox } from '@console/internal/components/utils';
+import { AsyncComponent, StatusBox } from '@console/internal/components/utils';
 import ConnectedTopologyDataController from '../TopologyDataController';
 import ProjectListPage from '../../projects/ProjectListPage';
 import { topologyData } from './topology-test-data';
-import { ConnectedTopologyView } from '../TopologyView';
+import Topology from '../Topology';
 
 type TopologyPageProps = React.ComponentProps<typeof TopologyPage>;
 type RenderTopologyProps = React.ComponentProps<typeof renderTopology>;
@@ -22,14 +22,6 @@ jest.mock('react-redux', () => {
     ...ActualReactRedux,
     useSelector: jest.fn(),
     useDispatch: jest.fn(),
-  };
-});
-
-jest.mock('@console/shared', () => {
-  const ActualShared = require.requireActual('@console/shared');
-  return {
-    ...ActualShared,
-    useQueryParams: () => new Map(),
   };
 });
 
@@ -48,17 +40,16 @@ describe('Topology page tests', () => {
 
     renderTopologyProps = {
       model: topologyData,
-      showGraphView: true,
       loaded: true,
       loadError: '',
       namespace: 'topology-test',
     };
   });
 
-  it('should render topology page', () => {
+  it('should render topology list page', () => {
     topologyProps.match.path = '/topology/ns/topology-test/list';
     const wrapper = shallow(<TopologyPage {...topologyProps} />);
-    expect(wrapper.find(NamespacedPage).exists()).toBe(true);
+    expect(wrapper.find(AsyncComponent).exists()).toBe(true);
   });
 
   it('should render topology graph page', () => {
@@ -108,7 +99,7 @@ describe('Topology page tests', () => {
     const Component = () => renderTopology(renderTopologyProps);
     const wrapper = shallow(<Component />);
     expect(wrapper.find(StatusBox).exists()).toBe(true);
-    expect(wrapper.find(ConnectedTopologyView).exists()).toBe(true);
+    expect(wrapper.find(Topology).exists()).toBe(true);
   });
 
   it('should render all projects list page for graph view when no project is selected', () => {

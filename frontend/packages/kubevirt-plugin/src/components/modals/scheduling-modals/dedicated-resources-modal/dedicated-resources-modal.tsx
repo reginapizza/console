@@ -51,14 +51,14 @@ export const DedicatedResourcesModal = withHandlePromise<DedicatedResourcesModal
 
     const onSubmit = async () => {
       if (isPinned !== isCurrentCPUPinned) {
+        // eslint-disable-next-line promise/catch-or-return
         handlePromise(
           k8sPatch(
             getVMLikeModel(vmLikeFinal),
             vmLikeFinal,
             await getDedicatedCpuPatch(vmLikeFinal, isPinned),
           ),
-          close,
-        );
+        ).then(close);
       } else {
         close();
       }

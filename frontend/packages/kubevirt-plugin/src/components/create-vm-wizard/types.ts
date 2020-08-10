@@ -14,6 +14,7 @@ export enum VMWizardTab {
   NETWORKING = 'NETWORKING',
   STORAGE = 'STORAGE',
   ADVANCED_CLOUD_INIT = 'ADVANCED_CLOUD_INIT',
+  ADVANCED_VIRTUAL_HARDWARE = 'ADVANCED_VIRTUAL_HARDWARE',
   REVIEW = 'REVIEW',
   RESULT = 'RESULT',
 }
@@ -30,7 +31,6 @@ export enum VMWizardProps {
   userTemplates = 'userTemplates',
   commonTemplates = 'commonTemplates',
   dataVolumes = 'dataVolumes',
-  openshiftCNVBaseImages = 'openshiftCNVBaseImages',
   storageClassConfigMap = 'storageClassConfigMap',
 }
 
@@ -41,6 +41,7 @@ export const ALL_VM_WIZARD_TABS = [
   VMWizardTab.NETWORKING,
   VMWizardTab.STORAGE,
   VMWizardTab.ADVANCED_CLOUD_INIT,
+  VMWizardTab.ADVANCED_VIRTUAL_HARDWARE,
   VMWizardTab.REVIEW,
   VMWizardTab.RESULT,
 ];
@@ -61,7 +62,6 @@ export enum VMSettingsField {
   DESCRIPTION = 'DESCRIPTION',
   USER_TEMPLATE = 'USER_TEMPLATE',
   OPERATING_SYSTEM = 'OPERATING_SYSTEM',
-  CLONE_COMMON_BASE_DISK_IMAGE = 'CLONE_COMMON_BASE_DISK_IMAGE',
   FLAVOR = 'FLAVOR',
   MEMORY = 'MEMORY',
   CPU = 'CPU',
@@ -211,7 +211,6 @@ export type ChangedCommonDataProp =
   | VMWizardProps.userTemplates
   | VMWizardProps.commonTemplates
   | VMWizardProps.dataVolumes
-  | VMWizardProps.openshiftCNVBaseImages
   | VMWizardProps.storageClassConfigMap
   | VMWareProviderProps.deployment
   | VMWareProviderProps.deploymentPods
@@ -240,7 +239,6 @@ export const DetectCommonDataChanges = new Set<ChangedCommonDataProp>([
   VMWizardProps.commonTemplates,
   VMWizardProps.storageClassConfigMap,
   VMWizardProps.dataVolumes,
-  VMWizardProps.openshiftCNVBaseImages,
   VMWareProviderProps.deployment,
   VMWareProviderProps.deploymentPods,
   VMWareProviderProps.v2vvmware,

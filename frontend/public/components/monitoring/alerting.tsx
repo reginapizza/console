@@ -1,6 +1,6 @@
 import * as classNames from 'classnames';
 import * as _ from 'lodash-es';
-import { Button, Popover } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
 import { sortable } from '@patternfly/react-table';
 import * as React from 'react';
 import { Helmet } from 'react-helmet';
@@ -152,16 +152,14 @@ const MonitoringResourceIcon: React.FC<MonitoringResourceIconProps> = ({ classNa
   </span>
 );
 
-const alertStateIcons = {
+const stateIcons = {
   [AlertStates.Firing]: <BellIcon />,
   [AlertStates.Pending]: <OutlinedBellIcon />,
   [AlertStates.Silenced]: <BellSlashIcon className="text-muted" />,
 };
 
-const AlertStateIcon: React.FC<{ state: string }> = ({ state }) => alertStateIcons[state];
-
 export const AlertState: React.FC<AlertStateProps> = ({ state }) => {
-  const icon = alertStateIcons[state];
+  const icon = stateIcons[state];
   return icon ? (
     <>
       {icon} {_.startCase(state)}
@@ -200,14 +198,15 @@ const AlertStateDescription = ({ alert }) => {
   return null;
 };
 
+const severityIcons = {
+  [AlertSeverity.Critical]: RedExclamationCircleIcon,
+  [AlertSeverity.Info]: BlueInfoCircleIcon,
+  [AlertSeverity.None]: BlueInfoCircleIcon,
+  [AlertSeverity.Warning]: YellowExclamationTriangleIcon,
+};
+
 const SeverityIcon: React.FC<{ severity: string }> = ({ severity }) => {
-  const Icon =
-    {
-      [AlertSeverity.Critical]: RedExclamationCircleIcon,
-      [AlertSeverity.Info]: BlueInfoCircleIcon,
-      [AlertSeverity.None]: BlueInfoCircleIcon,
-      [AlertSeverity.Warning]: YellowExclamationTriangleIcon,
-    }[severity] || YellowExclamationTriangleIcon;
+  const Icon = severityIcons[severity] || YellowExclamationTriangleIcon;
   return <Icon />;
 };
 
@@ -264,74 +263,12 @@ export const StateCounts: React.FC<{ alerts: PrometheusAlert[] }> = ({ alerts })
     <>
       {states.map((s) => (
         <div className="monitoring-icon-wrap" key={s}>
-          <AlertStateIcon state={s} /> {counts[s]} {_.startCase(s)}
+          {stateIcons[s]} {counts[s]} {_.startCase(s)}
         </div>
       ))}
     </>
   );
 };
-
-const PopoverField: React.FC<{ body: React.ReactNode; label: string }> = ({ body, label }) => (
-  <Popover headerContent={label} bodyContent={body}>
-    <Button variant="plain" className="details-item__popover-button">
-      {label}
-    </Button>
-  </Popover>
-);
-
-const alertStateHelp = (
-  <>
-    <p>
-      <AlertStateIcon state={AlertStates.Firing} /> <strong>Firing:</strong> The alert condition is
-      true for the duration of the timeout.
-    </p>
-    <p>
-      <AlertStateIcon state={AlertStates.Pending} /> <strong>Pending:</strong> The alert condition
-      is true, but the timeout has not been reached.
-    </p>
-    <p>
-      <AlertStateIcon state={AlertStates.Silenced} /> <strong>Silenced:</strong> The alert is now
-      silenced.
-    </p>
-  </>
-);
-
-const severityHelp = (
-  <>
-    <p>
-      <SeverityIcon severity={AlertSeverity.Critical} /> <strong>Critical:</strong> The condition
-      that triggered the alert could have a critical impact. The alert requires immediate attention
-      when fired.
-    </p>
-    <p>
-      <SeverityIcon severity={AlertSeverity.Warning} /> <strong>Warning:</strong> The alert provides
-      a warning notification about something that might require attention in order to prevent a
-      problem from occurring.
-    </p>
-    <p>
-      <SeverityIcon severity={AlertSeverity.Info} /> <strong>Info:</strong> The alert is provided
-      for informational purposes only.
-    </p>
-    <p>
-      <SeverityIcon severity={AlertSeverity.None} /> <strong>None:</strong> The alert has no defined
-      severity.
-    </p>
-  </>
-);
-
-const sourceHelp = (
-  <>
-    <p>
-      <strong>Platform:</strong> Platform-level alerts relate only to OpenShift namespaces.
-      OpenShift namespaces provide core OpenShift functionality.
-    </p>
-    <p>
-      <strong>User:</strong> User workload alerts relate to user-defined namespaces and are
-      customizable. User workload monitoring can be enabled post-installation to provide
-      observability into your own services.
-    </p>
-  </>
-);
 
 const Annotation = ({ children, title }) =>
   _.isNil(children) ? null : (
@@ -624,12 +561,10 @@ export const AlertsDetailsPage = withFallback(
                   <dl className="co-m-pane__details">
                     <dt>Name</dt>
                     <dd>{alertname}</dd>
-                    <dt>
-                      <PopoverField label="Severity" body={severityHelp} />
-                    </dt>
-                    <dd>
-                      <Severity severity={severity} />
-                    </dd>
+                  </dl>
+                </div>
+                <div className="col-sm-6">
+                  <dl className="co-m-pane__details">
                     {annotations.description && (
                       <Annotation title="Description">
                         <AlertMessage
@@ -651,15 +586,19 @@ export const AlertsDetailsPage = withFallback(
                     )}
                   </dl>
                 </div>
+              </div>
+              <div className="row">
                 <div className="col-sm-6">
                   <dl className="co-m-pane__details">
-                    <dt>
-                      <PopoverField label="Source" body={sourceHelp} />
-                    </dt>
-                    <dd>{alert && _.startCase(alertSource(alert))}</dd>
-                    <dt>
-                      <PopoverField label="State" body={alertStateHelp} />
-                    </dt>
+                    <dt>Severity</dt>
+                    <dd>
+                      <Severity severity={severity} />
+                    </dd>
+                  </dl>
+                </div>
+                <div className="col-sm-6">
+                  <dl className="co-m-pane__details">
+                    <dt>State</dt>
                     <dd>
                       <AlertState state={state} />
                       <AlertStateDescription alert={alert} />
@@ -817,9 +756,7 @@ export const AlertRulesDetailsPage = withFallback(
                   <dl className="co-m-pane__details">
                     <dt>Name</dt>
                     <dd>{name}</dd>
-                    <dt>
-                      <PopoverField label="Severity" body={severityHelp} />
-                    </dt>
+                    <dt>Severity</dt>
                     <dd>
                       <Severity severity={severity} />
                     </dd>
@@ -830,10 +767,6 @@ export const AlertRulesDetailsPage = withFallback(
                 </div>
                 <div className="col-sm-6">
                   <dl className="co-m-pane__details">
-                    <dt>
-                      <PopoverField label="Source" body={sourceHelp} />
-                    </dt>
-                    <dd>{rule && _.startCase(alertingRuleSource(rule))}</dd>
                     {_.isInteger(duration) && (
                       <>
                         <dt>For</dt>

@@ -3,7 +3,7 @@ import * as classNames from 'classnames';
 import * as _ from 'lodash-es';
 import { Link } from 'react-router-dom';
 import { Breadcrumb, BreadcrumbItem, Button, SplitItem, Split } from '@patternfly/react-core';
-import { OverviewItem, Status, HealthChecksAlert } from '@console/shared';
+import { Status, HealthChecksAlert } from '@console/shared';
 import {
   ActionsMenu,
   FirehoseResult,
@@ -21,7 +21,6 @@ import {
   referenceForModel,
 } from '../../module/k8s';
 import { ResourceItemDeleting } from '../overview/project-overview';
-import { ManagedByOperatorLink } from './managed-by';
 
 export const BreadCrumbs: React.SFC<BreadCrumbsProps> = ({ breadcrumbs }) => (
   <Breadcrumb>
@@ -130,9 +129,6 @@ export const PageHeading = connectToModel((props: PageHeadingProps) => {
               {kind && <ResourceIcon kind={kind} className="co-m-resource-icon--lg" />}{' '}
               <span data-test-id="resource-title" className="co-resource-item__resource-name">
                 {resourceTitle}
-                {data?.metadata?.namespace && data?.metadata?.ownerReferences?.length && (
-                  <ManagedByOperatorLink obj={data} />
-                )}
               </span>
               {resourceStatus && (
                 <ResourceStatus additionalClassNames="hidden-xs">
@@ -199,9 +195,8 @@ export const SidebarSectionHeading: React.SFC<SidebarSectionHeadingProps> = ({
 export const ResourceOverviewHeading: React.SFC<ResourceOverviewHeadingProps> = ({
   kindObj,
   actions,
-  resources,
+  resource,
 }) => {
-  const { obj: resource, ...otherResources } = resources;
   const isDeleting = !!resource.metadata.deletionTimestamp;
   return (
     <div className="overview__sidebar-pane-head resource-overview__heading">
@@ -225,7 +220,7 @@ export const ResourceOverviewHeading: React.SFC<ResourceOverviewHeadingProps> = 
         </div>
         {!isDeleting && (
           <div className="co-actions">
-            <ActionsMenu actions={actions.map((a) => a(kindObj, resource, otherResources))} />
+            <ActionsMenu actions={actions.map((a) => a(kindObj, resource))} />
           </div>
         )}
       </h1>
@@ -272,7 +267,7 @@ export type PageHeadingProps = {
 export type ResourceOverviewHeadingProps = {
   actions: KebabAction[];
   kindObj: K8sKind;
-  resources?: OverviewItem;
+  resource: K8sResourceKind;
 };
 
 export type SectionHeadingProps = {

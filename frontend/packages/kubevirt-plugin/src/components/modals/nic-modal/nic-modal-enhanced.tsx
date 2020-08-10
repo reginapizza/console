@@ -15,7 +15,7 @@ import { NetworkWrapper } from '../../../k8s/wrapper/vm/network-wrapper';
 import { NICModal } from './nic-modal';
 
 const NICModalFirehoseComponent: React.FC<NICModalFirehoseComponentProps> = (props) => {
-  const { nic, network, vmLikeEntity, vmLikeEntityLoading, isVMRunning, ...restProps } = props;
+  const { nic, network, vmLikeEntity, vmLikeEntityLoading, ...restProps } = props;
 
   const vmLikeFinal = getLoadedData(vmLikeEntityLoading, vmLikeEntity); // default old snapshot before loading a new one
   const vm = asVM(vmLikeFinal);
@@ -62,7 +62,6 @@ const NICModalFirehoseComponent: React.FC<NICModalFirehoseComponentProps> = (pro
       nic={new NetworkInterfaceWrapper(nicWrapper, true)}
       network={new NetworkWrapper(networkWrapper, true)}
       onSubmit={onSubmit}
-      isVMRunning={isVMRunning}
     />
   );
 };
@@ -74,11 +73,10 @@ type NICModalFirehoseComponentProps = ModalComponentProps & {
   nads?: FirehoseResult;
   vmLikeEntityLoading?: FirehoseResult<VMLikeEntityKind>;
   vmLikeEntity: VMLikeEntityKind;
-  isVMRunning?: boolean;
 };
 
 const NICModalFirehose: React.FC<NICModalFirehoseProps> = (props) => {
-  const { hasNADs, vmLikeEntity, isVMRunning, ...restProps } = props;
+  const { hasNADs, vmLikeEntity, ...restProps } = props;
 
   const namespace = getNamespace(vmLikeEntity);
   const name = getName(vmLikeEntity);
@@ -105,11 +103,7 @@ const NICModalFirehose: React.FC<NICModalFirehoseProps> = (props) => {
 
   return (
     <Firehose resources={resources}>
-      <NICModalFirehoseComponent
-        vmLikeEntity={vmLikeEntity}
-        isVMRunning={isVMRunning}
-        {...restProps}
-      />
+      <NICModalFirehoseComponent vmLikeEntity={vmLikeEntity} {...restProps} />
     </Firehose>
   );
 };
@@ -120,7 +114,6 @@ type NICModalFirehoseProps = ModalComponentProps & {
   network?: any;
   isEditing?: boolean;
   hasNADs: boolean;
-  isVMRunning?: boolean;
 };
 
 const nicModalStateToProps = ({ k8s }) => {

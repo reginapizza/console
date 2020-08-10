@@ -5,7 +5,7 @@ import { RootState } from '@console/internal/redux';
 import { stateToFlagsObject } from '@console/internal/reducers/features';
 import { pluginStore } from '@console/internal/plugins';
 import { getGatingFlagNames, isExtensionInUse } from './store';
-import { Extension, ExtensionTypeGuard, LoadedExtension } from './typings';
+import { Extension, ExtensionTypeGuard } from './typings';
 
 /**
  * React higher-order component (HOC) for consuming Console extensions.
@@ -92,7 +92,7 @@ export const withExtensions = <
 };
 
 type ExtensionProps<E extends Extension> = {
-  [propName: string]: E[] | LoadedExtension<E>[];
+  [propName: string]: E[];
 };
 
 type ExtensionTypeGuardMapper<E extends Extension, P extends ExtensionProps<E>> = {

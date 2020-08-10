@@ -472,6 +472,8 @@ export const OperandDetails = connectToModel(({ crd, csv, kindObj, obj }: Operan
   const [errorMessage, setErrorMessage] = React.useState(null);
   const handleError = (err: Error) => setErrorMessage(err.message);
   const schema = crd?.spec?.validation?.openAPIV3Schema ?? (definitionFor(kindObj) as JSONSchema6);
+  const specSchema = schema?.properties?.spec as JSONSchema6;
+  const statusSchema = schema?.properties?.status as JSONSchema6;
 
   // Find the matching CRD spec for the kind of this resource in the CSV.
   const { displayName, specDescriptors, statusDescriptors } =
@@ -516,7 +518,7 @@ export const OperandDetails = connectToModel(({ crd, csv, kindObj, obj }: Operan
         <PodStatuses
           kindObj={kindObj}
           obj={obj}
-          schema={schema}
+          schema={statusSchema}
           podStatusDescriptors={podStatuses}
         />
         <div className="co-operand-details__section co-operand-details__section--info">
@@ -530,7 +532,7 @@ export const OperandDetails = connectToModel(({ crd, csv, kindObj, obj }: Operan
                   descriptor={mainStatusDescriptor}
                   model={kindObj}
                   obj={obj}
-                  schema={schema}
+                  schema={statusSchema}
                   type={DescriptorType.status}
                 />
               </div>
@@ -541,7 +543,7 @@ export const OperandDetails = connectToModel(({ crd, csv, kindObj, obj }: Operan
                 itemClassName="col-sm-6"
                 model={kindObj}
                 obj={obj}
-                schema={schema}
+                schema={statusSchema}
                 type={DescriptorType.status}
               />
             )}
@@ -558,7 +560,7 @@ export const OperandDetails = connectToModel(({ crd, csv, kindObj, obj }: Operan
                 model={kindObj}
                 obj={obj}
                 onError={handleError}
-                schema={schema}
+                schema={specSchema}
                 type={DescriptorType.spec}
               />
             </div>

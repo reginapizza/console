@@ -56,7 +56,7 @@ export const VolumeSnapshotModal = withHandlePromise((props: VolumeSnapshotModal
         },
       },
     };
-    handlePromise(k8sCreate(VolumeSnapshotModel, snapshotTemplate), close);
+    handlePromise(k8sCreate(VolumeSnapshotModel, snapshotTemplate)).then(close); // eslint-disable-line promise/catch-or-return
   };
 
   return (

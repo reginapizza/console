@@ -21,9 +21,7 @@ type ConsumedExtensions =
   | RoutePage;
 
 const LSO_FLAG = 'LSO';
-export const LSO_DEVICE_DISCOVERY = 'LSO_DEVICE_DISCOVERY';
-const OCS_ATTACHED_DEVICES_FLAG =
-  'OCS_ATTACHED_DEVICES'; /* Inline with OCS_ATTACHED_DEVICES_FLAG flag of `@console/ceph-storage-plugin/src/fetaures` */
+const LSO_DEVICE_DISCOVERY = 'LSO_DEVICE_DISCOVERY';
 
 const plugin: Plugin<ConsumedExtensions> = [
   {
@@ -73,11 +71,10 @@ const plugin: Plugin<ConsumedExtensions> = [
       loader: () =>
         import(
           './components/disks-list/disks-list-page' /* webpackChunkName: "lso-disks-list" */
-        ).then((m) => m.NodesDisksListPage),
+        ).then((m) => m.default),
     },
     flags: {
       required: [LSO_DEVICE_DISCOVERY],
-      disallowed: [OCS_ATTACHED_DEVICES_FLAG],
     },
   },
   {

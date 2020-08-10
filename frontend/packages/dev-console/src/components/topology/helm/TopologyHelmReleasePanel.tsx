@@ -14,7 +14,6 @@ import HelmReleaseOverview from '../../helm/details/overview/HelmReleaseOverview
 import { helmReleaseActions } from './actions/helmReleaseActions';
 import TopologyGroupResourcesPanel from '../components/TopologyGroupResourcesPanel';
 import TopologyHelmReleaseNotesPanel from './TopologyHelmReleaseNotesPanel';
-import { getResource } from '../topology-utils';
 
 type PropsFromState = {
   selectedDetailsTab?: any;
@@ -46,7 +45,7 @@ export const ConnectedTopologyHelmReleasePanel: React.FC<TopologyHelmReleasePane
   const secret = helmRelease.getData().resources.obj;
   const { manifestResources, releaseNotes } = helmRelease.getData().data;
   const name = helmRelease.getLabel();
-  const { namespace } = getResource(helmRelease).metadata;
+  const { namespace } = helmRelease.getData().groupResources[0].resources.obj.metadata;
 
   const detailsComponent = !secret
     ? () => (

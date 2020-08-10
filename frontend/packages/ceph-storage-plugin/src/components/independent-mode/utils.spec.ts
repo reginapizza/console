@@ -1,5 +1,5 @@
-import * as _ from 'lodash';
 import { checkError } from './utils';
+import * as _ from 'lodash';
 
 const REQD_KEYS = ['rook-ceph-mon-endpoints'];
 const ENCODED_KEYS = ['rook-csi-cephfs-node'];

@@ -33,9 +33,6 @@ import {
 import { Status, getBadgeFromType, BadgeType, getName, getNamespace } from '@console/shared';
 import { snapshotStatusFilters, volumeSnapshotStatus } from '../../status';
 
-const { common, RestorePVC } = Kebab.factory;
-const menuActions = [RestorePVC, ...common];
-
 const tableColumnClasses = [
   '', // Name
   '', // Namespace
@@ -61,7 +58,6 @@ const Header = (disableItems = {}) => () =>
       sortField: 'metadata.namespace',
       transforms: [sortable],
       props: { className: tableColumnClasses[1] },
-      id: 'namespace',
     },
     {
       title: 'Status',
@@ -121,7 +117,7 @@ const Row: RowFunction<VolumeSnapshotKind> = ({ key, obj, style, index, customDa
           namespace={namespace}
         />
       </TableData>
-      <TableData className={tableColumnClasses[1]} columnID="namespace">
+      <TableData className={tableColumnClasses[1]}>
         <ResourceLink kind={NamespaceModel.kind} name={namespace} />
       </TableData>
       <TableData className={tableColumnClasses[2]}>
@@ -160,7 +156,7 @@ const Row: RowFunction<VolumeSnapshotKind> = ({ key, obj, style, index, customDa
         <ResourceKebab
           kind={referenceForModel(VolumeSnapshotModel)}
           resource={obj}
-          actions={menuActions}
+          actions={Kebab.factory.common}
         />
       </TableData>
     </TableRow>

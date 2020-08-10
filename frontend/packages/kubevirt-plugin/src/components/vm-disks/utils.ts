@@ -7,7 +7,6 @@ export const diskTableColumnClasses = [
   classNames('col-lg-2'),
   classNames('col-lg-2'),
   classNames('col-lg-2'),
-  classNames('col-lg-2'),
   Kebab.columnClass,
 ];
 

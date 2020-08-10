@@ -50,10 +50,9 @@ export const DeleteVMIModal = withHandlePromise((props: DeleteVMIProps) => {
       deleteOwnedVolumeResources: deleteDisks,
     });
 
-    return handlePromise(promise, () => {
-      close();
-      redirectToList(vmiUpToDate);
-    });
+    return handlePromise(promise)
+      .then(close)
+      .then(() => redirectToList(vmiUpToDate));
   };
 
   const alertHref = `/k8s/ns/${namespace}/virtualmachineinstances/${name}/details#logged-in-users`;

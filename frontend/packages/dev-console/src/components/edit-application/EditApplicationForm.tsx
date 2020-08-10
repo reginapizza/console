@@ -7,7 +7,6 @@ import { FormFooter } from '@console/shared';
 import GitSection from '../import/git/GitSection';
 import BuilderSection from '../import/builder/BuilderSection';
 import DockerSection from '../import/git/DockerSection';
-import IconSection from '../import/section/IconSection';
 import AdvancedSection from '../import/advanced/AdvancedSection';
 import AppSection from '../import/app/AppSection';
 import { NormalizedBuilderImages } from '../../utils/imagestream-utils';
@@ -44,7 +43,6 @@ const EditApplicationForm: React.FC<FormikProps<FormikValues> & EditApplicationF
         <DockerSection buildStrategy={values.build.strategy} />
       )}
       {createFlowType === CreateApplicationFlow.Container && <ImageSearchSection />}
-      {createFlowType === CreateApplicationFlow.Container && <IconSection />}
       <AppSection project={values.project} />
       <AdvancedSection values={values} appResources={appResources} />
       <FormFooter

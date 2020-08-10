@@ -61,11 +61,11 @@ export const getMultilineQueries = (
   [ProjectQueries.NETWORK_UTILIZATION]: [
     {
       query: queries[ProjectQueries.NETWORK_IN_UTILIZATION]({ project }),
-      desc: 'in',
+      desc: 'In',
     },
     {
       query: queries[ProjectQueries.NETWORK_OUT_UTILIZATION]({ project }),
-      desc: 'out',
+      desc: 'Out',
     },
   ],
 });

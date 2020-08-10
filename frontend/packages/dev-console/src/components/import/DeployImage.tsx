@@ -69,7 +69,6 @@ const DeployImage: React.FC<Props> = ({
       status: { metadata: {}, status: '' },
       ports: [],
     },
-    runtimeIcon: null,
     isSearchingForImage: false,
     serverless: {
       scaling: {

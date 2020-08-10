@@ -9,7 +9,7 @@ import {
   featureReducerName,
   FlagsObject,
 } from '@console/internal/reducers/features';
-import { TemplateModel, PersistentVolumeClaimModel } from '@console/internal/models';
+import { TemplateModel } from '@console/internal/models';
 import { Firehose, history } from '@console/internal/components/utils';
 import { Location } from 'history';
 import { match as RouterMatch } from 'react-router';
@@ -54,6 +54,7 @@ import { ReviewTab } from './tabs/review-tab/review-tab';
 import { ResultTab } from './tabs/result-tab/result-tab';
 import { StorageTab } from './tabs/storage-tab/storage-tab';
 import { CloudInitTab } from './tabs/cloud-init-tab/cloud-init-tab';
+import { VirtualHardwareTab } from './tabs/virtual-hardware-tab/virtual-hardware-tab';
 import { useStorageClassConfigMapWrapped } from '../../hooks/storage-class-config-map';
 import { ValidTabGuard } from './tabs/valid-tab-guard';
 import { FirehoseResourceEnhanced } from '../../types/custom';
@@ -207,16 +208,36 @@ class CreateVMWizardComponent extends React.Component<CreateVMWizardComponentPro
         ),
       },
       {
-        id: VMWizardTab.ADVANCED_CLOUD_INIT,
         name: 'Advanced',
-        canJumpTo: tabsMetadata[VMWizardTab.ADVANCED_CLOUD_INIT]?.canJumpTo,
-        component: (
-          <>
-            <ResourceLoadErrors wizardReduxID={reduxID} key="errors" />
-            <WizardErrors wizardReduxID={reduxID} key="wizard-errors" />
-            <CloudInitTab wizardReduxID={reduxID} key={VMWizardTab.ADVANCED_CLOUD_INIT} />
-          </>
-        ),
+        steps: [
+          {
+            id: VMWizardTab.ADVANCED_CLOUD_INIT,
+            name: TabTitleResolver[VMWizardTab.ADVANCED_CLOUD_INIT],
+            canJumpTo: tabsMetadata[VMWizardTab.ADVANCED_CLOUD_INIT]?.canJumpTo,
+            component: (
+              <>
+                <ResourceLoadErrors wizardReduxID={reduxID} key="errors" />
+                <WizardErrors wizardReduxID={reduxID} key="wizard-errors" />
+                <CloudInitTab wizardReduxID={reduxID} key={VMWizardTab.ADVANCED_CLOUD_INIT} />
+              </>
+            ),
+          },
+          {
+            id: VMWizardTab.ADVANCED_VIRTUAL_HARDWARE,
+            name: TabTitleResolver[VMWizardTab.ADVANCED_VIRTUAL_HARDWARE],
+            canJumpTo: tabsMetadata[VMWizardTab.ADVANCED_VIRTUAL_HARDWARE]?.canJumpTo,
+            component: (
+              <>
+                <ResourceLoadErrors wizardReduxID={reduxID} key="errors" />
+                <WizardErrors wizardReduxID={reduxID} key="wizard-errors" />
+                <VirtualHardwareTab
+                  wizardReduxID={reduxID}
+                  key={VMWizardTab.ADVANCED_VIRTUAL_HARDWARE}
+                />
+              </>
+            ),
+          },
+        ],
       },
       {
         id: VMWizardTab.REVIEW,
@@ -384,10 +405,6 @@ export const CreateVMWizardPageComponent: React.FC<CreateVMWizardPageComponentPr
           namespace: 'openshift',
           prop: VMWizardProps.commonTemplates,
           matchLabels: { [TEMPLATE_TYPE_LABEL]: TEMPLATE_TYPE_BASE },
-        }),
-        getResource(PersistentVolumeClaimModel, {
-          namespace: 'openshift-cnv-base-images',
-          prop: VMWizardProps.openshiftCNVBaseImages,
         }),
       );
     }

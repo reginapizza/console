@@ -25,7 +25,11 @@ const ConfigureUnschedulableModal: React.FC<ConfigureUnschedulableModalProps> = 
 }) => {
   const handleSubmit = (event) => {
     event.preventDefault();
-    handlePromise(makeNodeUnschedulable(resource), close);
+    handlePromise(makeNodeUnschedulable(resource))
+      .then(close)
+      .catch((error) => {
+        throw error;
+      });
   };
   return (
     <form onSubmit={handleSubmit} name="form" className="modal-content ">

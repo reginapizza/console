@@ -53,9 +53,6 @@ const (
 
 	// Well-known location of metering service for OpenShift. This is only accessible in-cluster.
 	openshiftMeteringHost = "reporting-operator.openshift-metering.svc:8080"
-
-	// Well-known location of the GitOps service. This is only accessible in-cluster
-	openshiftGitOpsHost = "cluster.openshift-pipelines-app-delivery.svc:8080"
 )
 
 func main() {
@@ -91,8 +88,6 @@ func main() {
 
 	fK8sAuth := fs.String("k8s-auth", "service-account", "service-account | bearer-token | oidc | openshift")
 	fK8sAuthBearerToken := fs.String("k8s-auth-bearer-token", "", "Authorization token to send with proxied Kubernetes API requests.")
-
-	fK8sModeOffClusterGitOps := fs.String("k8s-mode-off-cluster-gitops", "", "DEV ONLY. URL of the GitOps backend service")
 
 	fRedirectPort := fs.Int("redirect-port", 0, "Port number under which the console should listen for custom hostname redirect.")
 	fLogLevel := fs.String("log-level", "", "level of logging information by package (pkg=level).")
@@ -362,12 +357,6 @@ func main() {
 				Endpoint:        &url.URL{Scheme: "https", Host: openshiftMeteringHost, Path: "/api"},
 			}
 			srv.TerminalProxyTLSConfig = serviceProxyTLSConfig
-
-			srv.GitOpsProxyConfig = &proxy.Config{
-				TLSClientConfig: serviceProxyTLSConfig,
-				HeaderBlacklist: []string{"Cookie", "X-CSRFToken"},
-				Endpoint:        &url.URL{Scheme: "https", Host: openshiftGitOpsHost},
-			}
 		}
 
 	case "off-cluster":
@@ -423,15 +412,6 @@ func main() {
 		}
 
 		srv.TerminalProxyTLSConfig = serviceProxyTLSConfig
-
-		if *fK8sModeOffClusterGitOps != "" {
-			offClusterGitOpsURL := bridge.ValidateFlagIsURL("k8s-mode-off-cluster-gitops", *fK8sModeOffClusterGitOps)
-			srv.GitOpsProxyConfig = &proxy.Config{
-				TLSClientConfig: serviceProxyTLSConfig,
-				HeaderBlacklist: []string{"Cookie", "X-CSRFToken"},
-				Endpoint:        offClusterGitOpsURL,
-			}
-		}
 
 	default:
 		bridge.FlagFatalf("k8s-mode", "must be one of: in-cluster, off-cluster")

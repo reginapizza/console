@@ -10,7 +10,6 @@ import OperatorBackedOwnerReferences, {
 } from '../utils';
 
 import { BuildOverview } from './build-overview';
-import { HPAOverview } from './hpa-overview';
 import { NetworkingOverview } from './networking-overview';
 import { PodsOverview } from './pods-overview';
 import { resourceOverviewPages } from './resource-overview-pages';
@@ -21,14 +20,13 @@ const { common } = Kebab.factory;
 export const OverviewDetailsResourcesTab: React.SFC<OverviewDetailsResourcesTabProps> = ({
   item,
 }) => {
-  const { buildConfigs, hpas, routes, services, pods, obj } = item;
+  const { buildConfigs, routes, services, pods, obj } = item;
   const pluginComponents = usePluginsOverviewTabSection(item);
   return (
     <div className="overview__sidebar-pane-body">
       <OperatorBackedOwnerReferences item={item} />
       <PodsOverview pods={pods} obj={obj} />
       <BuildOverview buildConfigs={buildConfigs} />
-      <HPAOverview hpas={hpas} />
       {pluginComponents.map(({ Component, key }) => (
         <Component key={key} item={item} />
       ))}
@@ -47,7 +45,7 @@ export const DefaultOverviewPage = connectToModel(
           ...common,
         ]}
         kindObj={kindObject}
-        resources={item}
+        resource={item.obj}
       />
       <div className="overview__sidebar-pane-body resource-overview__body">
         <div className="resource-overview__summary">

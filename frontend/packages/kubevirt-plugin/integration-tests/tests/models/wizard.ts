@@ -1,5 +1,6 @@
 /* eslint-disable no-await-in-loop */
 import { browser, ExpectedConditions as until } from 'protractor';
+import * as _ from 'lodash';
 import { createItemButton, isLoaded } from '@console/internal-integration-tests/views/crud.view';
 import { clickNavLink } from '@console/internal-integration-tests/views/sidenav.view';
 import { click, fillInput, asyncForEach } from '@console/shared/src/test-utils/utils';
@@ -26,6 +27,7 @@ import { Flavor, ProvisionSource } from '../utils/constants/wizard';
 import { resourceHorizontalTab } from '../../views/uiResource.view';
 import { virtualizationTitle } from '../../views/vms.list.view';
 import { VMBuilderData } from '../types/vm';
+import { DISK_DRIVE } from '../utils/constants/vm';
 
 export class Wizard {
   async openWizard(model: K8sKind) {
@@ -155,6 +157,12 @@ export class Wizard {
     await addDiskDialog.create(disk);
   }
 
+  async addCD(cd: Disk) {
+    await click(view.addCDButton);
+    const addDiskDialog = new DiskDialog();
+    await addDiskDialog.create(cd);
+  }
+
   /**
    * Edits attributes of a disk.
    * @param   {string}              name     Name of a disk to edit.
@@ -279,6 +287,15 @@ export class Wizard {
         throw new Error('Using cloud init with template not yet implemented.');
       }
       await this.configureCloudInit(cloudInit);
+    }
+    await this.next();
+
+    // Advanced - Virtual Hardware
+    const cdroms = _.filter(disks, (disk) => disk.drive === DISK_DRIVE.CDROM);
+    if (cdroms) {
+      for (const cdrom of cdroms) {
+        await this.addCD(cdrom);
+      }
     }
     await this.next();
 

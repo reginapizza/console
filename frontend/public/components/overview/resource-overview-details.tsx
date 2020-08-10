@@ -77,7 +77,7 @@ export const ResourceOverviewDetails = connect<PropsFromState, PropsFromDispatch
     }
     return (
       <div className="overview__sidebar-pane resource-overview">
-        <ResourceOverviewHeading actions={menuActions} kindObj={kindObj} resources={item} />
+        <ResourceOverviewHeading actions={menuActions} kindObj={kindObj} resource={item.obj} />
         <SimpleTabNav
           onClickTab={onClickTab}
           selectedTab={selectedDetailsTab}

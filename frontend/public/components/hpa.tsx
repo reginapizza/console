@@ -231,7 +231,6 @@ const HorizontalPodAutoscalersTableHeader = () => {
       sortField: 'metadata.namespace',
       transforms: [sortable],
       props: { className: tableColumnClasses[1] },
-      id: 'namespace',
     },
     {
       title: 'Labels',
@@ -281,10 +280,7 @@ const HorizontalPodAutoscalersTableRow: RowFunction<K8sResourceKind> = ({
           title={obj.metadata.name}
         />
       </TableData>
-      <TableData
-        className={classNames(tableColumnClasses[1], 'co-break-word')}
-        columnID="namespace"
-      >
+      <TableData className={classNames(tableColumnClasses[1], 'co-break-word')}>
         <ResourceLink
           kind="Namespace"
           name={obj.metadata.namespace}

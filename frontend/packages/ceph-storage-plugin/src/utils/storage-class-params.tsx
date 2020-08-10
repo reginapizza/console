@@ -7,7 +7,6 @@ export const StorageClassFormProvisoners: ExtensionSCProvisionerProp = Object.fr
     'openshift-storage.rbd.csi.ceph.com': {
       title: 'Ceph RBD',
       provisioner: 'rbd.csi.ceph.com',
-      allowVolumeExpansion: true,
       parameters: {
         clusterID: {
           name: 'Cluster ID',
@@ -80,7 +79,6 @@ export const StorageClassFormProvisoners: ExtensionSCProvisionerProp = Object.fr
     'openshift-storage.cephfs.csi.ceph.com': {
       title: 'Ceph FS',
       provisioner: 'cephfs.csi.ceph.com',
-      allowVolumeExpansion: true,
       parameters: {
         clusterID: {
           name: 'Cluster ID',

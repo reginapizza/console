@@ -8,6 +8,7 @@ import {
   ChartVoronoiContainer,
   getCustomTheme,
   ChartGroup,
+  ChartTooltip,
 } from '@patternfly/react-charts';
 import {
   global_warning_color_100 as warningColor,
@@ -20,10 +21,9 @@ import { PrometheusEndpoint } from './helpers';
 import { PrometheusGraph, PrometheusGraphLink } from './prometheus-graph';
 import { usePrometheusPoll } from './prometheus-poll-hook';
 import { areaTheme } from './themes';
-import { DataPoint, CursorVoronoiContainer } from './';
-import { mapLimitsRequests } from './utils';
+import { DataPoint } from './';
+import { getRangeVectorStats } from './utils';
 import { GraphEmpty } from './graph-empty';
-import { ChartLegendTooltip } from './tooltip';
 
 const DEFAULT_HEIGHT = 180;
 const DEFAULT_SAMPLES = 60;
@@ -56,19 +56,22 @@ export const AreaChart: React.FC<AreaChartProps> = ({
   yAxis = true,
   chartStyle,
   byteDataType = '',
-  showAllTooltip,
 }) => {
   // Note: Victory incorrectly typed ThemeBaseProps.padding as number instead of PaddingProps
   // @ts-ignore
   const theme = getCustomTheme(ChartThemeColor.blue, ChartThemeVariant.light, areaTheme);
   const [containerRef, width] = useRefWidth();
+  const [processedData, setProcessedData] = React.useState(data);
+  const [unit, setUnit] = React.useState('');
 
-  const [processedData, unit] = React.useMemo(() => {
+  React.useEffect(() => {
     if (byteDataType) {
       const result = processFrame(data, byteDataType);
-      return [result.processedData, result.unit];
+      setProcessedData(result.processedData);
+      setUnit(result.unit);
+    } else {
+      setProcessedData(data);
     }
-    return [data, ''];
   }, [byteDataType, data]);
 
   const tickFormat = React.useCallback((tick) => `${humanize(tick, unit, unit).string}`, [
@@ -77,46 +80,37 @@ export const AreaChart: React.FC<AreaChartProps> = ({
   ]);
 
   const getLabel = React.useCallback(
-    (prop, includeDate = true) => {
-      const { x, y } = prop.datum as DataPoint<Date>;
+    (prop) => {
+      const { x, y, description } = prop.datum as DataPoint<Date>;
       const value = humanize(y, unit, unit).string;
       const date = formatDate(x);
-      return includeDate ? `${value} at ${date}` : value;
+      if (!description) {
+        return `${value} at ${date}`;
+      }
+      return description(date, value);
     },
     [humanize, unit, formatDate],
   );
 
-  const multiLine = processedData?.length > 1;
+  const multiLine = data && data.filter((d) => !!d).length > 1;
 
-  const container = React.useMemo(() => {
-    if (multiLine) {
-      const legendData = processedData.map((d) => ({
-        childName: d[0].description,
-        name: d[0].description,
-        symbol: d[0].symbol,
-      }));
-      return (
-        <CursorVoronoiContainer
-          activateData={false}
-          cursorDimension="x"
-          labels={(props) => getLabel(props, false)}
-          labelComponent={
-            <ChartLegendTooltip
-              stack={showAllTooltip}
-              legendData={legendData}
-              title={(d) => (showAllTooltip ? formatDate(d[0].x) : getLabel({ datum: d[0] }))}
-            />
-          }
-          voronoiDimension="x"
+  const container = (
+    <ChartVoronoiContainer
+      voronoiDimension="x"
+      labels={getLabel}
+      activateData={false}
+      labelComponent={
+        <ChartTooltip
+          centerOffset={multiLine ? { x: 0, y: -40 } : undefined}
+          pointerLength={multiLine ? 40 : undefined}
         />
-      );
-    }
-    return <ChartVoronoiContainer voronoiDimension="x" labels={getLabel} activateData={false} />;
-  }, [formatDate, getLabel, multiLine, processedData, showAllTooltip]);
+      }
+    />
+  );
 
   return (
     <PrometheusGraph className={className} ref={containerRef} title={title}>
-      {data?.[0]?.length ? (
+      {data && data[0] && data[0].length ? (
         <PrometheusGraphLink query={query}>
           <Chart
             containerComponent={container}
@@ -131,12 +125,7 @@ export const AreaChart: React.FC<AreaChartProps> = ({
             {yAxis && <ChartAxis dependentAxis tickCount={tickCount} tickFormat={tickFormat} />}
             <ChartGroup>
               {processedData.map((datum, index) => (
-                <ChartArea
-                  key={index}
-                  data={datum}
-                  style={chartStyle && chartStyle[index]}
-                  name={datum[0]?.description}
-                />
+                <ChartArea key={index} data={datum} style={chartStyle && chartStyle[index]} />
               ))}
             </ChartGroup>
           </Chart>
@@ -151,14 +140,12 @@ export const AreaChart: React.FC<AreaChartProps> = ({
 export const Area: React.FC<AreaProps> = ({
   namespace,
   query,
-  limitQuery,
-  requestedQuery,
   samples = DEFAULT_SAMPLES,
   timeout,
   timespan = DEFAULT_TIMESPAN,
   ...rest
 }) => {
-  const [utilization, , utilizationLoading] = usePrometheusPoll({
+  const [response, , loading] = usePrometheusPoll({
     endpoint: PrometheusEndpoint.QUERY_RANGE,
     namespace,
     query,
@@ -166,33 +153,11 @@ export const Area: React.FC<AreaProps> = ({
     timeout,
     timespan,
   });
-  const [limit, , limitLoading] = usePrometheusPoll({
-    endpoint: PrometheusEndpoint.QUERY_RANGE,
-    namespace,
-    query: limitQuery,
-    samples,
-    timeout,
-    timespan,
-  });
-  const [requested, , requestedLoading] = usePrometheusPoll({
-    endpoint: PrometheusEndpoint.QUERY_RANGE,
-    namespace,
-    query: requestedQuery,
-    samples,
-    timeout,
-    timespan,
-  });
-  const { data, chartStyle } = mapLimitsRequests(utilization, limit, requested);
-  const loading =
-    utilizationLoading &&
-    (limitQuery ? limitLoading : true) &&
-    (requestedQuery ? requestedLoading : true);
-  return (
-    <AreaChart data={data} loading={loading} query={query} chartStyle={chartStyle} {...rest} />
-  );
+  const data = getRangeVectorStats(response);
+  return <AreaChart data={[data]} loading={loading} query={query} {...rest} />;
 };
 
-export type AreaChartProps = {
+type AreaChartProps = {
   className?: string;
   formatDate?: (date: Date) => string;
   humanize?: Humanize;
@@ -208,7 +173,6 @@ export type AreaChartProps = {
   padding?: object;
   chartStyle?: object[];
   byteDataType?: ByteDataTypes; //Use this to process the whole data frame at once
-  showAllTooltip?: boolean;
 };
 
 type AreaProps = AreaChartProps & {
@@ -218,6 +182,4 @@ type AreaProps = AreaChartProps & {
   timeout?: string;
   timespan?: number;
   byteDataType?: ByteDataTypes;
-  limitQuery?: string;
-  requestedQuery?: string;
 };

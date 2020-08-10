@@ -10,7 +10,10 @@ import {
 } from '@console/internal/models';
 import * as utils from '@console/internal/components/utils';
 import { TopologyDataResources } from '../../components/topology/topology-types';
-import { WORKLOAD_TYPES } from '../../components/topology/topology-utils';
+import {
+  getTopologyResourceObject,
+  WORKLOAD_TYPES,
+} from '../../components/topology/topology-utils';
 import { cleanUpWorkload } from '../application-utils';
 import {
   MockResources,
@@ -36,7 +39,9 @@ const getTopologyData = (mockData: TopologyDataResources, name: string) => {
   const workloadResources = getWorkloadResources(mockData, TEST_KINDS_MAP, WORKLOAD_TYPES);
   const result = baseDataModelGetter(model, 'test-project', mockData, workloadResources, []);
 
-  return result.nodes.find((n) => n.data.resources.obj.metadata.name === name);
+  const node = result.nodes.find((n) => n.data.resources.obj.metadata.name === name);
+  const resource = node ? getTopologyResourceObject(node.data) : undefined;
+  return { resource, topologyTransformedData: node?.data };
 };
 
 describe('ApplicationUtils ', () => {
@@ -53,8 +58,9 @@ describe('ApplicationUtils ', () => {
   });
 
   it('Should delete all the specific models related to deployment config', async (done) => {
-    const nodeModel = await getTopologyData(MockResources, 'nodejs');
-    cleanUpWorkload(nodeModel)
+    const { resource, topologyTransformedData } = await getTopologyData(MockResources, 'nodejs');
+
+    cleanUpWorkload(resource, topologyTransformedData)
       .then(() => {
         const allArgs = spy.calls.allArgs();
         const removedModels = allArgs.map((arg) => arg[0]);
@@ -72,9 +78,9 @@ describe('ApplicationUtils ', () => {
   });
 
   it('Should delete all the specific models related to deployment config if the build config is not present i.e. for resource created through deploy image form', async (done) => {
-    const nodeModel = await getTopologyData(MockResources, 'nodejs-ex');
+    const { resource, topologyTransformedData } = await getTopologyData(MockResources, 'nodejs-ex');
 
-    cleanUpWorkload(nodeModel)
+    cleanUpWorkload(resource, topologyTransformedData)
       .then(() => {
         const allArgs = spy.calls.allArgs();
         const removedModels = allArgs.map((arg) => arg[0]);
@@ -90,8 +96,11 @@ describe('ApplicationUtils ', () => {
   });
 
   it('Should delete all the specific models related to daemonsets', async (done) => {
-    const nodeModel = await getTopologyData(MockResources, 'daemonset-testing');
-    cleanUpWorkload(nodeModel)
+    const { resource, topologyTransformedData } = await getTopologyData(
+      MockResources,
+      'daemonset-testing',
+    );
+    cleanUpWorkload(resource, topologyTransformedData)
       .then(() => {
         const allArgs = spy.calls.allArgs();
         const removedModels = allArgs.map((arg) => arg[0]);
@@ -104,8 +113,11 @@ describe('ApplicationUtils ', () => {
   });
 
   it('Should delete all the specific models related to statefulsets', async (done) => {
-    const nodeModel = await getTopologyData(MockResources, 'alertmanager-main');
-    cleanUpWorkload(nodeModel)
+    const { resource, topologyTransformedData } = await getTopologyData(
+      MockResources,
+      'alertmanager-main',
+    );
+    cleanUpWorkload(resource, topologyTransformedData)
       .then(() => {
         const allArgs = spy.calls.allArgs();
         const removedModels = allArgs.map((arg) => arg[0]);
@@ -117,9 +129,9 @@ describe('ApplicationUtils ', () => {
       .catch((err) => fail(err));
   });
   it('Should not delete any of the models, if delete access is not available', async (done) => {
-    const nodeModel = await getTopologyData(MockResources, 'nodejs');
+    const { resource, topologyTransformedData } = await getTopologyData(MockResources, 'nodejs');
     spyAndReturn(checkAccessSpy)(Promise.resolve({ status: { allowed: false } }));
-    cleanUpWorkload(nodeModel)
+    cleanUpWorkload(resource, topologyTransformedData)
       .then(() => {
         const allArgs = spy.calls.allArgs();
         const removedModels = allArgs.map((arg) => arg[0]);

@@ -91,9 +91,8 @@ export type ActivePlugin = {
 };
 
 /**
- * Runtime extension interface, exposing additional metadata.
+ * An extension enhanced with additional metadata at runtime.
  */
-export type LoadedExtension<E extends Extension> = E & {
-  pluginName: string;
-  uid: string;
+export type ExtensionWithMetadata = Extension & {
+  plugin: string;
 };

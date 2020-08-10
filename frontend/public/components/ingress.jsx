@@ -78,7 +78,6 @@ const IngressTableHeader = () => {
       sortField: 'metadata.namespace',
       transforms: [sortable],
       props: { className: tableColumnClasses[1] },
-      id: 'namespace',
     },
     {
       title: 'Labels',
@@ -111,10 +110,7 @@ const IngressTableRow = ({ obj: ingress, index, key, style }) => {
           title={ingress.metadata.uid}
         />
       </TableData>
-      <TableData
-        className={classNames(tableColumnClasses[1], 'co-break-word')}
-        columnID="namespace"
-      >
+      <TableData className={classNames(tableColumnClasses[1], 'co-break-word')}>
         <ResourceLink
           kind="Namespace"
           name={ingress.metadata.namespace}

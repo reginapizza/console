@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as Combinatorics from 'js-combinatorics';
 import { PodModel } from '@console/internal/models';
-import { Extension, ModelDefinition } from '../typings';
+import { Extension, ActivePlugin, ModelDefinition } from '../typings';
 import {
   sanitizeExtension,
   augmentExtension,
@@ -100,44 +100,25 @@ describe('sanitizeExtension', () => {
 });
 
 describe('augmentExtension', () => {
-  it('adds computed properties to extension', () => {
-    expect(
-      augmentExtension(
-        {
-          type: 'Foo',
-          properties: {},
-        },
-        'Test',
-        0,
-      ),
-    ).toEqual({
-      type: 'Foo',
-      properties: {},
-      pluginName: 'Test',
-      uid: 'Test[0]',
-    });
+  const testPlugin: ActivePlugin = Object.freeze({
+    name: 'Test',
+    extensions: [],
+  });
 
-    expect(
-      augmentExtension(
-        {
-          type: 'Bar',
-          properties: {},
-        },
-        'Test',
-        1,
-      ),
-    ).toEqual({
-      type: 'Bar',
+  it('adds the plugin property', () => {
+    const testExtension: Extension = { type: 'Foo/Bar', properties: {} };
+
+    expect(augmentExtension(testExtension, testPlugin)).toEqual({
+      type: 'Foo/Bar',
       properties: {},
-      pluginName: 'Test',
-      uid: 'Test[1]',
+      plugin: testPlugin.name,
     });
   });
 
   it('returns the same extension instance', () => {
     const testExtension: Extension = { type: 'Foo/Bar', properties: {} };
 
-    expect(augmentExtension(testExtension, 'Test', 0)).toBe(testExtension);
+    expect(augmentExtension(testExtension, testPlugin)).toBe(testExtension);
   });
 });
 

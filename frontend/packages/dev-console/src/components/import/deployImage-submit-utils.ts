@@ -61,13 +61,13 @@ export const createOrUpdateImageStream = (
 ): Promise<K8sResourceKind> => {
   const {
     project: { name: namespace },
-    application: { name: applicationName },
+    application: { name: application },
     name,
     allowInsecureRegistry,
     isi: { name: isiName, tag },
     labels: userLabels,
   } = formData;
-  const defaultLabels = getAppLabels({ name, applicationName });
+  const defaultLabels = getAppLabels(name, application);
   const newImageStream = {
     apiVersion: 'image.openshift.io/v1',
     kind: 'ImageStream',
@@ -102,22 +102,14 @@ export const createOrUpdateImageStream = (
 
 const getMetadata = (formData: DeployImageFormData) => {
   const {
-    application: { name: applicationName },
+    application: { name: application },
     name,
     isi: { image },
     labels: userLabels,
-    imageStream: { tag: selectedTag, namespace },
-    runtimeIcon,
+    imageStream: { tag: imgTag, namespace: imgNamespace },
   } = formData;
-  const imageStreamName = getRuntime(image.metadata?.labels);
-  const defaultLabels = getAppLabels({
-    name,
-    applicationName,
-    imageStreamName,
-    runtimeIcon,
-    selectedTag,
-    namespace,
-  });
+  const imgStreamName = getRuntime(image.metadata?.labels);
+  const defaultLabels = getAppLabels(name, application, imgStreamName, imgTag, imgNamespace);
   const labels = { ...defaultLabels, ...userLabels };
   const podLabels = getPodLabels(name);
 

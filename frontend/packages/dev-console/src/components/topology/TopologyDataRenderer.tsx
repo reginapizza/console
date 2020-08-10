@@ -7,10 +7,8 @@ import { PROMETHEUS_TENANCY_BASE_PATH } from '@console/internal/components/graph
 import { TopologyDataResources, TrafficData } from './topology-types';
 import ModelContext, { ExtensibleModel } from './data-transforms/ModelContext';
 import { baseDataModelGetter } from './data-transforms';
-import { getFilterById, useDisplayFilters, SHOW_GROUPS_FILTER_ID } from './filters';
 
 export interface RenderProps {
-  showGraphView: boolean;
   model?: Model;
   namespace: string;
   loaded: boolean;
@@ -18,7 +16,6 @@ export interface RenderProps {
 }
 
 export interface TopologyDataRendererProps {
-  showGraphView: boolean;
   kindsInFlight: boolean;
   resources: TopologyDataResources;
   render(props: RenderProps): React.ReactElement;
@@ -31,16 +28,13 @@ const POLL_DELAY = 15 * 1000;
 export const TopologyDataRenderer: React.FC<TopologyDataRendererProps> = ({
   render,
   resources,
+  namespace,
   kindsInFlight,
   trafficData,
-  namespace,
-  showGraphView,
 }) => {
   const dataModelContext = React.useContext<ExtensibleModel>(ModelContext);
   const [model, setModel] = React.useState<Model>(null);
   const [loadError, setLoadError] = React.useState<string>(null);
-  const filters = useDisplayFilters();
-  const showGroups = getFilterById(SHOW_GROUPS_FILTER_ID, filters)?.value ?? true;
 
   const url = PROMETHEUS_TENANCY_BASE_PATH
     ? `${PROMETHEUS_TENANCY_BASE_PATH}/api/v1/rules?namespace=${namespace}`
@@ -99,20 +93,19 @@ export const TopologyDataRenderer: React.FC<TopologyDataRendererProps> = ({
             dataModelContext.namespace,
             resources,
             workloadResources,
-            showGroups ? depicters : [],
+            depicters,
             trafficData,
             monitoringAlerts,
           ),
         );
       })
       .catch(() => {});
-  }, [resources, trafficData, dataModelContext, kindsInFlight, monitoringAlerts, showGroups]);
+  }, [resources, trafficData, dataModelContext, kindsInFlight, monitoringAlerts]);
 
   return render({
     loaded: !!model,
     loadError,
     namespace,
     model,
-    showGraphView,
   });
 };

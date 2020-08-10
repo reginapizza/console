@@ -23,7 +23,7 @@ const getNodeTimeStamp = (node: ColaNode): Date => {
 const nodeSorter = (node1: ColaNode, node2: ColaNode) =>
   getNodeTimeStamp(node1) > getNodeTimeStamp(node2) ? -1 : 1;
 
-const alignNodeConnector = (
+const alignLeftNodeConnector = (
   edges: ColaLink[],
   type: string,
   g: ColaGroup | ColaNode,
@@ -47,25 +47,18 @@ const alignNodeConnector = (
         ? (filteredNode as ColaNode).radius + getGroupPadding(g.element)
         : (filteredNode as ColaNode).width / 2;
 
-    const linkNodeConstraint: any = {
+    const linkSourceConstraint: any = {
       type: 'alignment',
       axis: 'y',
       offsets: [{ node: connectorLinks[0].target.index, offset: 0 }],
     };
     let nextOffset = -height / 2;
     connectorLinks.forEach((link: ColaLink) => {
-      // Evenly space out the nodes vertically
-      if (type === TYPE_EVENT_PUB_SUB_LINK) {
-        linkNodeConstraint.offsets.push({
-          node: link.target.index,
-          offset: nextOffset + link.target.height / 2,
-        });
-      } else {
-        linkNodeConstraint.offsets.push({
-          node: link.source.index,
-          offset: nextOffset + link.source.height / 2,
-        });
-      }
+      // Evenly space out the event sources vertically
+      linkSourceConstraint.offsets.push({
+        node: link.source.index,
+        offset: nextOffset + link.source.height / 2,
+      });
       // Keep the event sources to the left
       constraints.push({
         axis: 'x',
@@ -76,7 +69,7 @@ const alignNodeConnector = (
       });
       nextOffset += link.source.height;
     });
-    constraints.push(linkNodeConstraint);
+    constraints.push(linkSourceConstraint);
   }
   return constraints;
 };
@@ -124,7 +117,7 @@ export const layoutConstraints = (
         }
       }
 
-      const eventSourceLinksConnector = alignNodeConnector(
+      const eventSourceLinksConnector = alignLeftNodeConnector(
         edges,
         TYPE_EVENT_SOURCE_LINK,
         g,
@@ -132,7 +125,7 @@ export const layoutConstraints = (
         filteredNode,
       );
 
-      const pubSubLinksConnector = alignNodeConnector(
+      const pubSubLinksConnector = alignLeftNodeConnector(
         edges,
         TYPE_EVENT_PUB_SUB_LINK,
         g,

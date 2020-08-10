@@ -3,11 +3,11 @@ import { Helmet } from 'react-helmet';
 import { matchPath, match as RMatch, Link, Redirect } from 'react-router-dom';
 import { Tooltip, Popover, Button } from '@patternfly/react-core';
 import { ListIcon, TopologyIcon, QuestionCircleIcon } from '@patternfly/react-icons';
-import { useQueryParams } from '@console/shared/src';
 import {
   StatusBox,
   Firehose,
   HintBlock,
+  AsyncComponent,
   removeQueryArgument,
 } from '@console/internal/components/utils';
 
@@ -17,8 +17,8 @@ import ProjectsExistWrapper from '../ProjectsExistWrapper';
 import ProjectListPage from '../projects/ProjectListPage';
 import ConnectedTopologyDataController from './TopologyDataController';
 import { RenderProps } from './TopologyDataRenderer';
+import Topology from './Topology';
 import TopologyShortcuts from './TopologyShortcuts';
-import { ConnectedTopologyView } from './TopologyView';
 import { LAST_TOPOLOGY_VIEW_LOCAL_STORAGE_KEY } from './components/const';
 import { TOPOLOGY_SEARCH_FILTER_KEY } from './filters';
 
@@ -52,13 +52,7 @@ const EmptyMsg = () => (
   />
 );
 
-export function renderTopology({
-  loaded,
-  loadError,
-  model,
-  namespace,
-  showGraphView,
-}: RenderProps) {
+export function renderTopology({ loaded, loadError, model, namespace }: RenderProps) {
   return (
     <StatusBox
       data={model ? model.nodes : null}
@@ -67,14 +61,14 @@ export function renderTopology({
       loadError={loadError}
       EmptyMsg={EmptyMsg}
     >
-      <ConnectedTopologyView showGraphView={showGraphView} model={model} namespace={namespace} />
+      <div className="odc-topology">
+        <Topology model={model} namespace={namespace} />
+      </div>
     </StatusBox>
   );
 }
 
 export const TopologyPage: React.FC<TopologyPageProps> = ({ match }) => {
-  const queryParams = useQueryParams();
-  const searchParams = queryParams.get('searchQuery');
   const namespace = match.params.name;
   const showListView = !!matchPath(match.path, {
     path: '*/list',
@@ -113,6 +107,7 @@ export const TopologyPage: React.FC<TopologyPageProps> = ({ match }) => {
       </Helmet>
       <NamespacedPage
         variant={showListView ? NamespacedPageVariants.light : NamespacedPageVariants.default}
+        hideApplications={showListView}
         onNamespaceChange={handleNamespaceChange}
         toolbar={
           <>
@@ -139,7 +134,7 @@ export const TopologyPage: React.FC<TopologyPageProps> = ({ match }) => {
                 className="pf-c-button pf-m-plain"
                 to={`/topology/${namespace ? `ns/${namespace}` : 'all-namespaces'}${
                   showListView ? '/graph' : '/list'
-                }${searchParams ? `?searchQuery=${searchParams}` : ''}`}
+                }`}
               >
                 {showListView ? <TopologyIcon size="md" /> : <ListIcon size="md" />}
               </Link>
@@ -150,11 +145,22 @@ export const TopologyPage: React.FC<TopologyPageProps> = ({ match }) => {
         <Firehose resources={[{ kind: 'Project', prop: 'projects', isList: true }]}>
           <ProjectsExistWrapper title="Topology">
             {namespace ? (
-              <ConnectedTopologyDataController
-                showGraphView={showGraphView}
-                render={renderTopology}
-                namespace={namespace}
-              />
+              showListView ? (
+                <AsyncComponent
+                  mock={false}
+                  match={match}
+                  title=""
+                  EmptyMsg={EmptyMsg}
+                  emptyBodyClass="odc-namespaced-page__content"
+                  loader={() =>
+                    import(
+                      '@console/internal/components/overview' /* webpackChunkName: "topology-overview" */
+                    ).then((m) => m.Overview)
+                  }
+                />
+              ) : (
+                <ConnectedTopologyDataController namespace={namespace} render={renderTopology} />
+              )
             ) : (
               <ProjectListPage title="Topology">
                 Select a project to view the topology

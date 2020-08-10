@@ -21,14 +21,14 @@ import { getDataResiliencyState } from '@console/ceph-storage-plugin/src/compone
 import { CephObjectStoreModel } from '@console/ceph-storage-plugin/src/models';
 import { RGW_FLAG, OCS_INDEPENDENT_FLAG } from '@console/ceph-storage-plugin/src/features';
 import { useFlag } from '@console/shared/src/hooks/flag';
-import { MODES } from '@console/ceph-storage-plugin/src/constants';
-import { filterNooBaaAlerts, filterRGWAlerts } from '../../utils';
+import { filterNooBaaAlerts } from '../../utils';
 import { StatusCardQueries } from '../../queries';
 import { NooBaaSystemModel } from '../../models';
 import { getNooBaaState, getRGWHealthState } from './statuses';
 import { ObjectServiceStatus } from './object-service-health';
 import { StatusType } from '../../constants';
 import './status-card.scss';
+import { MODES } from '@console/ceph-storage-plugin/src/constants';
 
 const statusCardQueries = Object.keys(StatusCardQueries);
 
@@ -44,7 +44,7 @@ const cephObjectStoreResource: FirehoseResource = {
   prop: 'rgw',
 };
 
-const ObjectStorageAlerts = withDashboardResources(
+const NooBaaAlerts = withDashboardResources(
   ({ watchAlerts, stopWatchAlerts, notificationAlerts }) => {
     React.useEffect(() => {
       watchAlerts();
@@ -54,7 +54,7 @@ const ObjectStorageAlerts = withDashboardResources(
     }, [watchAlerts, stopWatchAlerts]);
 
     const { data, loaded, loadError } = notificationAlerts || {};
-    const alerts = [...filterNooBaaAlerts(data), ...filterRGWAlerts(data)];
+    const alerts = filterNooBaaAlerts(data);
 
     return (
       <AlertsBody error={!_.isEmpty(loadError)}>
@@ -161,7 +161,7 @@ const StatusCard: React.FC<DashboardItemProps> = ({
             </GalleryItem>
           </Gallery>
         </HealthBody>
-        <ObjectStorageAlerts />
+        <NooBaaAlerts />
       </DashboardCardBody>
     </DashboardCard>
   );

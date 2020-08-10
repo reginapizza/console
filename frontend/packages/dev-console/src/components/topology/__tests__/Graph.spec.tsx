@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { mount } from 'enzyme';
-import { TopologyView } from '../TopologyView';
+import { shallow } from 'enzyme';
+import Topology from '../Topology';
 import { MockGraphResources } from './graph-test-data';
 import { baseDataModelGetter } from '../data-transforms';
 
@@ -13,19 +13,7 @@ describe('Graph', () => {
     mockSelectFn = jest.fn();
     const model = { nodes: [], edges: [] };
     topologyData = baseDataModelGetter(model, 'test-project', MockGraphResources, []);
-    graphWrapper = mount(
-      <TopologyView
-        model={topologyData}
-        namespace="test"
-        showGraphView
-        application={''}
-        eventSourceEnabled
-        onSelectTab={() => {}}
-        onFiltersChange={() => {}}
-        onSupportedFiltersChange={() => {}}
-        onSupportedKindsChange={() => {}}
-      />,
-    );
+    graphWrapper = shallow(<Topology model={topologyData} namespace="test" />);
   });
 
   xit('should display the workload nodes', () => {

@@ -43,16 +43,19 @@ export const UninstallOperatorModal = withHandlePromise((props: UninstallOperato
         : [],
     );
 
-    props.handlePromise(Promise.all(promises), () => {
-      props.close();
+    props
+      .handlePromise(Promise.all(promises))
+      .then(() => {
+        props.close();
 
-      if (
-        window.location.pathname.split('/').includes(subscription.metadata.name) ||
-        window.location.pathname.split('/').includes(subscription.status.installedCSV)
-      ) {
-        history.push(resourceListPathFromModel(ClusterServiceVersionModel, getActiveNamespace()));
-      }
-    });
+        if (
+          window.location.pathname.split('/').includes(subscription.metadata.name) ||
+          window.location.pathname.split('/').includes(subscription.status.installedCSV)
+        ) {
+          history.push(resourceListPathFromModel(ClusterServiceVersionModel, getActiveNamespace()));
+        }
+      })
+      .catch(_.noop);
   };
 
   const name = _.get(props.csv, 'spec.displayName') || props.subscription.spec.name;
@@ -98,11 +101,7 @@ export const UninstallOperatorModal = withHandlePromise((props: UninstallOperato
 export const createUninstallOperatorModal = createModalLauncher(UninstallOperatorModal);
 
 export type UninstallOperatorModalProps = {
-  handlePromise: <T>(
-    promise: Promise<T>,
-    onFulfill?: (res) => void,
-    onError?: (errorMsg: string) => void,
-  ) => void;
+  handlePromise: <T>(promise: Promise<T>) => Promise<T>;
   inProgress: boolean;
   errorMessage: string;
   cancel?: () => void;

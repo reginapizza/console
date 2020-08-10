@@ -18,7 +18,6 @@ import { EndpointList } from './endpoint';
 import { configureSizeModal } from './configure-size';
 import { configureUpdateStrategyModal } from './configure-update-strategy';
 import { DefaultCapability, K8sResourceLinkCapability } from '../common';
-import { getPatchPathFromDescriptor } from '../utils';
 
 const PodCount: React.FC<SpecCapabilityProps> = ({
   description,
@@ -147,7 +146,7 @@ const BooleanSwitch: React.FC<SpecCapabilityProps> = ({
 
     if (_.has(obj, `spec.${descriptor.path}`)) {
       const patchFor = (val: boolean) => [
-        { op: 'add', path: `/spec/${getPatchPathFromDescriptor(descriptor)}`, value: val },
+        { op: 'add', path: `/spec/${descriptor.path.replace(/\./g, '/')}`, value: val },
       ];
       return k8sPatch(model, obj, patchFor(checked)).catch((err) => errorCb(err));
     }
@@ -203,7 +202,7 @@ const CheckboxUIComponent: React.FC<SpecCapabilityProps> = ({
   const [confirmed, setConfirmed] = React.useState(false);
 
   const patchFor = (val: boolean) => [
-    { op: 'add', path: `/spec/${getPatchPathFromDescriptor(descriptor)}`, value: val },
+    { op: 'add', path: `/spec/${descriptor.path.replace('.', '/')}`, value: val },
   ];
   const update = () => {
     setConfirmed(true);

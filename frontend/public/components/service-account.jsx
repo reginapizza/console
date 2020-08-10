@@ -126,7 +126,6 @@ const ServiceAccountTableHeader = () => {
       sortField: 'metadata.namespace',
       transforms: [sortable],
       props: { className: tableColumnClasses[1] },
-      id: 'namespace',
     },
     {
       title: 'Secrets',
@@ -158,10 +157,7 @@ const ServiceAccountTableRow = ({ obj: serviceaccount, index, key, style }) => {
       <TableData className={tableColumnClasses[0]}>
         <ResourceLink kind={kind} name={name} namespace={namespace} title={uid} />
       </TableData>
-      <TableData
-        className={classNames(tableColumnClasses[1], 'co-break-word')}
-        columnID="namespace"
-      >
+      <TableData className={classNames(tableColumnClasses[1], 'co-break-word')}>
         <ResourceLink kind="Namespace" name={namespace} title={namespace} /> {}
       </TableData>
       <TableData className={tableColumnClasses[2]}>{secrets ? secrets.length : 0}</TableData>

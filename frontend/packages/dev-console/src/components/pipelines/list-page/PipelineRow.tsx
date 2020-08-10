@@ -30,7 +30,7 @@ const PipelineRow: RowFunction<Pipeline> = ({ obj, index, key, style }) => {
           title={obj.metadata.name}
         />
       </TableData>
-      <TableData className={tableColumnClasses[1]} columnID="namespace">
+      <TableData className={tableColumnClasses[1]}>
         <ResourceLink kind="Namespace" name={obj.metadata.namespace} />
       </TableData>
       <TableData className={tableColumnClasses[2]}>

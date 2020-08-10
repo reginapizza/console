@@ -22,7 +22,6 @@ import {
   NODE_SHADOW_FILTER_ID,
   useSearchFilter,
   useDisplayFilters,
-  useAllowEdgeCreation,
   getFilterById,
   SHOW_LABELS_FILTER_ID,
   getTopologyResourceObject,
@@ -74,7 +73,6 @@ const EventingPubSubNode: React.FC<EventingPubSubNodeProps> = ({
   const groupRefs = useCombineRefs(dragNodeRef, dndDropRef, hoverRef);
   const [filtered] = useSearchFilter(element.getLabel());
   const displayFilters = useDisplayFilters();
-  const allowEdgeCreation = useAllowEdgeCreation();
   const showLabelsFilter = getFilterById(SHOW_LABELS_FILTER_ID, displayFilters);
   const showLabels = showLabelsFilter?.value || hover;
   const { width, height } = element.getBounds();
@@ -93,14 +91,14 @@ const EventingPubSubNode: React.FC<EventingPubSubNodeProps> = ({
     namespace: resourceObj.metadata.namespace,
   });
   React.useLayoutEffect(() => {
-    if (createAccess && allowEdgeCreation) {
+    if (createAccess) {
       if (hover) {
         onShowCreateConnector && onShowCreateConnector();
       } else {
         onHideCreateConnector && onHideCreateConnector();
       }
     }
-  }, [hover, onShowCreateConnector, onHideCreateConnector, createAccess, allowEdgeCreation]);
+  }, [hover, onShowCreateConnector, onHideCreateConnector, createAccess]);
 
   return (
     <Tooltip

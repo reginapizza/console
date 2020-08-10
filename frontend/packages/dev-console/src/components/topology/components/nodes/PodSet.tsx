@@ -6,10 +6,8 @@ import {
   getPodData,
   podRingLabel,
   podDataInProgress,
-  hpaPodRingLabel,
 } from '@console/shared';
 import { DonutStatusData } from '../../topology-types';
-import { useRelatedHPA } from '../../../hpa/hooks';
 
 interface PodSetProps {
   size: number;
@@ -69,18 +67,8 @@ const PodSet: React.FC<PodSetProps> = ({ size, data, x = 0, y = 0, showPodCount 
     data.isRollingOut,
   );
 
-  const [hpa] = useRelatedHPA(
-    data.dc.apiVersion,
-    data.dc.kind,
-    data.dc.metadata.name,
-    data.dc.metadata.namespace,
-  );
-  const hpaControlledScaling = !!hpa;
-
   const obj = get(data, ['current', 'obj'], null) || data.dc;
-  const { title, subTitle, titleComponent } = hpaControlledScaling
-    ? hpaPodRingLabel(obj, hpa, data?.pods)
-    : podRingLabel(obj, obj.kind, data?.pods);
+  const { title, subTitle, titleComponent } = podRingLabel(obj, data.dc.kind, data?.pods);
   return (
     <>
       <PodStatus

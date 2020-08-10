@@ -37,8 +37,6 @@ import { useShowErrorToggler } from '../../../hooks/use-show-error-toggler';
 import { UINetworkEditConfig } from '../../../types/ui/nic';
 import { isFieldDisabled } from '../../../utils/ui/edit-config';
 import { K8sResourceKind } from '@console/internal/module/k8s';
-import { PendingChangesAlert } from '../../Alerts/PendingChangesAlert';
-import { MODAL_RESTART_IS_REQUIRED } from '../../../strings/vm/status';
 
 const getNetworkChoices = (nads: K8sResourceKind[], allowPodNetwork): NetworkWrapper[] => {
   const networkChoices = nads.map((nad) => {
@@ -140,7 +138,6 @@ export const NICModal = withHandlePromise((props: NICModalProps) => {
     close,
     cancel,
     editConfig,
-    isVMRunning,
   } = props;
   const isDisabled = (fieldName: string, disabled?: boolean) =>
     inProgress || disabled || isFieldDisabled(editConfig, fieldName);
@@ -208,7 +205,8 @@ export const NICModal = withHandlePromise((props: NICModalProps) => {
     e.preventDefault();
 
     if (isValid) {
-      handlePromise(onSubmit(resultNIC, resultNetwork), close);
+      // eslint-disable-next-line promise/catch-or-return
+      handlePromise(onSubmit(resultNIC, resultNetwork)).then(close);
     } else {
       setShowUIError(true);
     }
@@ -218,7 +216,6 @@ export const NICModal = withHandlePromise((props: NICModalProps) => {
     <div className="modal-content">
       <ModalTitle>{isEditing ? EDIT : ADD} Network Interface</ModalTitle>
       <ModalBody>
-        {isVMRunning && <PendingChangesAlert warningMsg={MODAL_RESTART_IS_REQUIRED} />}
         <Form>
           {editConfig?.warning && (
             <Alert variant={AlertVariant.warning} isInline title={editConfig?.warning} />
@@ -336,6 +333,5 @@ export type NICModalProps = {
   usedInterfacesNames: Set<string>;
   allowPodNetwork: boolean;
   editConfig?: UINetworkEditConfig;
-  isVMRunning?: boolean;
 } & ModalComponentProps &
   HandlePromiseProps;

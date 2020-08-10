@@ -7,7 +7,6 @@ import {
 } from '@console/internal/module/k8s';
 import { BuildStrategyType } from '@console/internal/components/build';
 import { DeploymentConfigModel, DeploymentModel } from '@console/internal/models';
-import { hasIcon } from '@console/internal/components/catalog/catalog-item-icon';
 import { ServiceModel } from '@console/knative-plugin';
 import { UNASSIGNED_KEY } from '../../const';
 import { Resources, DeploymentData, GitReadableTypes } from '../import/import-types';
@@ -276,14 +275,6 @@ export const getCommonInitialValues = (
   return commonInitialValues;
 };
 
-export const getIconInitialValues = (editAppResource: K8sResourceKind) => {
-  const runtimeLabel = editAppResource?.metadata?.labels?.['app.openshift.io/runtime'];
-  const runtimeIcon = runtimeLabel && hasIcon(runtimeLabel) ? runtimeLabel : null;
-  return {
-    runtimeIcon,
-  };
-};
-
 export const getGitAndDockerfileInitialValues = (
   buildConfig: K8sResourceKind,
   route: K8sResourceKind,
@@ -416,37 +407,39 @@ export const getInitialValues = (
   appName: string,
   namespace: string,
 ) => {
-  const editAppResourceData = appResources.editAppResource?.data;
-  const routeData = appResources.route?.data;
-  const buildConfigData = appResources.buildConfig?.data;
-
-  const commonValues = getCommonInitialValues(editAppResourceData, routeData, appName, namespace);
-  const gitDockerValues = getGitAndDockerfileInitialValues(buildConfigData, routeData);
-
-  let iconValues = {};
+  const commonValues = getCommonInitialValues(
+    _.get(appResources, 'editAppResource.data'),
+    _.get(appResources, 'route.data'),
+    appName,
+    namespace,
+  );
+  const gitDockerValues = getGitAndDockerfileInitialValues(
+    _.get(appResources, 'buildConfig.data'),
+    _.get(appResources, 'route.data'),
+  );
   let externalImageValues = {};
   let internalImageValues = {};
+
   if (_.isEmpty(gitDockerValues)) {
-    iconValues = getIconInitialValues(editAppResourceData);
     externalImageValues = getExternalImageInitialValues(appResources);
     internalImageValues = _.isEmpty(externalImageValues)
-      ? getInternalImageInitialValues(editAppResourceData)
+      ? getInternalImageInitialValues(_.get(appResources, 'editAppResource.data'))
       : {};
     if (
       _.isEmpty(externalImageValues) &&
       !_.get(internalImageValues, 'imageStream.tag') &&
       !_.get(internalImageValues, 'imageStream.image')
     ) {
+      const editAppResourceData = _.get(appResources, 'editAppResource.data');
       if (editAppResourceData?.kind === ServiceModel.kind) {
         internalImageValues = {};
-        externalImageValues = getExternalImagelValues(editAppResourceData);
+        externalImageValues = getExternalImagelValues(_.get(appResources, 'editAppResource.data'));
       }
     }
   }
 
   return {
     ...commonValues,
-    ...iconValues,
     ...gitDockerValues,
     ...externalImageValues,
     ...internalImageValues,

@@ -17,11 +17,9 @@ const VMStatusModal = withHandlePromise<VMStatusModalProps>(
       event.preventDefault();
 
       const promise = unpauseVMI(vmi);
-      handlePromise(
-        promise,
-        () => setOpen(false),
-        () => setPatchError(true),
-      );
+      handlePromise(promise)
+        .then(() => setOpen(false))
+        .catch(() => setPatchError(true));
     };
 
     const footer = (

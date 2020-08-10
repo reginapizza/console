@@ -195,7 +195,8 @@ const CreateSnapshotForm = withHandlePromise<SnapshotResourceProps>((props) => {
       },
     };
 
-    handlePromise(k8sCreate(VolumeSnapshotModel, snapshotTemplate), (resource) => {
+    // eslint-disable-next-line promise/catch-or-return
+    handlePromise(k8sCreate(VolumeSnapshotModel, snapshotTemplate)).then((resource) => {
       history.push(resourceObjPath(resource, referenceFor(resource)));
     });
   };
@@ -269,7 +270,9 @@ const CreateSnapshotForm = withHandlePromise<SnapshotResourceProps>((props) => {
               type="submit"
               variant="primary"
               id="save-changes"
-              isDisabled={!snapshotClassName || !snapshotName || !pvcName}
+              isDisabled={
+                !snapshotClassName || !snapshotName || !pvcName || pvcObj?.status?.phase !== 'Bound'
+              }
             >
               Create
             </Button>

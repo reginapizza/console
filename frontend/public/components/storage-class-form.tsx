@@ -47,7 +47,6 @@ const defaultState = {
     type: null,
     parameters: {},
     reclaim: null,
-    expansion: false,
   },
   customParams: [['', '']],
   validationSuccessful: false,
@@ -74,7 +73,6 @@ export class StorageClassForm_ extends React.Component<
     title: '',
     provisioner: '',
     parameters: {},
-    allowVolumeExpansion: false,
   };
 
   storageTypes = {};
@@ -118,7 +116,6 @@ export class StorageClassForm_ extends React.Component<
     aws: {
       title: 'AWS Elastic Block Storage',
       provisioner: 'kubernetes.io/aws-ebs',
-      allowVolumeExpansion: true,
       documentationLink: 'https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs',
       parameters: {
         type: {
@@ -156,7 +153,6 @@ export class StorageClassForm_ extends React.Component<
     'gce-pd': {
       title: 'GCE PD',
       provisioner: 'kubernetes.io/gce-pd',
-      allowVolumeExpansion: true,
       documentationLink: 'https://kubernetes.io/docs/concepts/storage/storage-classes/#gce',
       parameters: {
         type: {
@@ -201,7 +197,6 @@ export class StorageClassForm_ extends React.Component<
     glusterfs: {
       title: 'Glusterfs',
       provisioner: 'kubernetes.io/glusterfs',
-      allowVolumeExpansion: true,
       documentationLink: 'https://kubernetes.io/docs/concepts/storage/storage-classes/#glusterfs',
       parameters: {
         resturl: {
@@ -246,7 +241,6 @@ export class StorageClassForm_ extends React.Component<
     openstackCinder: {
       title: 'OpenStack Cinder',
       provisioner: 'kubernetes.io/cinder',
-      allowVolumeExpansion: true,
       documentationLink:
         'https://kubernetes.io/docs/concepts/storage/storage-classes/#openstack-cinder',
       parameters: {
@@ -261,7 +255,6 @@ export class StorageClassForm_ extends React.Component<
     azureFile: {
       title: 'Azure File',
       provisioner: 'kubernetes.io/azure-file',
-      allowVolumeExpansion: true,
       documentationLink: 'https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-file',
       parameters: {
         skuName: {
@@ -281,7 +274,6 @@ export class StorageClassForm_ extends React.Component<
     azureDisk: {
       title: 'Azure Disk',
       provisioner: 'kubernetes.io/azure-disk',
-      allowVolumeExpansion: true,
       documentationLink: 'https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-disk',
       parameters: {
         storageaccounttype: {
@@ -298,7 +290,6 @@ export class StorageClassForm_ extends React.Component<
     quobyte: {
       title: 'Quobyte',
       provisioner: 'kubernetes.io/quobyte',
-      allowVolumeExpansion: false,
       documentationLink: 'https://kubernetes.io/docs/concepts/storage/storage-classes/#quobyte',
       parameters: {
         quobyteAPIServer: {
@@ -338,7 +329,6 @@ export class StorageClassForm_ extends React.Component<
     vSphereVolume: {
       title: 'vSphere Volume',
       provisioner: 'kubernetes.io/vsphere-volume',
-      allowVolumeExpansion: false,
       documentationLink: 'https://kubernetes.io/docs/concepts/storage/storage-classes/#vsphere',
       parameters: {
         diskformat: {
@@ -359,7 +349,6 @@ export class StorageClassForm_ extends React.Component<
     portworxVolume: {
       title: 'Portworx Volume',
       provisioner: 'kubernetes.io/portworx-volume',
-      allowVolumeExpansion: true,
       documentationLink:
         'https://kubernetes.io/docs/concepts/storage/storage-classes/#portworx-volume',
       parameters: {
@@ -432,7 +421,6 @@ export class StorageClassForm_ extends React.Component<
     scaleIo: {
       title: 'ScaleIO',
       provisioner: 'kubernetes.io/scaleio',
-      allowVolumeExpansion: false,
       documentationLink: 'https://kubernetes.io/docs/concepts/storage/storage-classes/#scaleio',
       parameters: {
         gateway: {
@@ -478,7 +466,6 @@ export class StorageClassForm_ extends React.Component<
     storageOs: {
       title: 'StorageOS',
       provisioner: 'kubernetes.io/storageos',
-      allowVolumeExpansion: false,
       documentationLink: 'https://kubernetes.io/docs/concepts/storage/storage-classes/#storageos',
       parameters: {
         pool: {
@@ -629,7 +616,7 @@ export class StorageClassForm_ extends React.Component<
       error: null,
     });
     this.setState({ newStorageClass: this.addDefaultParams() }, () => {
-      const { description, type, reclaim, expansion } = this.state.newStorageClass;
+      const { description, type, reclaim } = this.state.newStorageClass;
       const dataParameters = this.getFormParams();
       const annotations = description ? { description } : {};
       const data: StorageClass = {
@@ -648,10 +635,6 @@ export class StorageClassForm_ extends React.Component<
       const volumeBindingMode = this.storageTypes[type]?.volumeBindingMode;
       if (volumeBindingMode) {
         data.volumeBindingMode = volumeBindingMode;
-      }
-
-      if (this.storageTypes[type].allowVolumeExpansion) {
-        data.allowVolumeExpansion = expansion;
       }
 
       k8sCreate(StorageClassModel, data)
@@ -934,9 +917,6 @@ export class StorageClassForm_ extends React.Component<
     const { newStorageClass, fieldErrors } = this.state;
     const reclaimPolicyKey =
       newStorageClass.reclaim === null ? this.reclaimPolicies.Delete : newStorageClass.reclaim;
-    const expansionFlag =
-      newStorageClass.type && this.storageTypes[newStorageClass.type].allowVolumeExpansion;
-    const allowExpansion = expansionFlag ? newStorageClass.expansion : false;
 
     return (
       <div className="co-m-pane__body co-m-pane__form">
@@ -1020,20 +1000,6 @@ export class StorageClassForm_ extends React.Component<
             </span>
           </div>
 
-          {expansionFlag && (
-            <div className="checkbox">
-              <label>
-                <input
-                  type="checkbox"
-                  className="create-storage-class-form__checkbox"
-                  onChange={(event) => this.setStorageHandler('expansion', event.target.checked)}
-                  checked={allowExpansion}
-                />
-                Allow persistent volume claims to be expanded
-              </label>
-            </div>
-          )}
-
           <div className="co-form-subsection">
             {newStorageClass.type !== null ? this.getProvisionerElements() : null}
           </div>
@@ -1078,7 +1044,7 @@ const mapDispatchToProps = () => ({
   watchK8sList: k8sActions.watchK8sList,
 });
 
-export type StorageClassFormProps = StorageClassFormExtensionProps & {
+export type StorageClassFormProps = StorageClassParamsExtensions & {
   onClose: () => void;
   watchK8sList: (id: string, query: object, kind: object) => void;
   stopK8sWatch: (id: string) => void;
@@ -1094,7 +1060,6 @@ export type StorageClassData = {
   description: string;
   parameters: any;
   reclaim: string;
-  expansion: boolean;
 };
 
 export type StorageClass = {
@@ -1103,7 +1068,6 @@ export type StorageClass = {
   parameters: object;
   reclaimPolicy?: string;
   volumeBindingMode?: string;
-  allowVolumeExpansion?: boolean;
 };
 
 export type StorageClassFormState = {
@@ -1125,12 +1089,12 @@ export const ConnectedStorageClassForm = connect(
   mapStateToProps,
   mapDispatchToProps,
 )(
-  withExtensions<StorageClassFormExtensionProps>({ params: isStorageClassProvisioner })(
+  withExtensions<StorageClassParamsExtensions>({ params: isStorageClassProvisioner })(
     StorageClassForm_,
   ),
 );
 
-export type StorageClassFormExtensionProps = {
+export type StorageClassParamsExtensions = {
   params: StorageClassProvisioner[];
 };
 

@@ -67,10 +67,11 @@ export const RestorePVCModal = withHandlePromise((props: RestorePVCModalProps) =
         },
       },
     };
-    handlePromise(
-      k8sCreate(PersistentVolumeClaimModel, restorePVCTemplate, { ns: namespace }),
-      close,
-    );
+    handlePromise(k8sCreate(PersistentVolumeClaimModel, restorePVCTemplate, { ns: namespace }))
+      .then(close)
+      .catch((error) => {
+        throw error;
+      });
   };
 
   return (

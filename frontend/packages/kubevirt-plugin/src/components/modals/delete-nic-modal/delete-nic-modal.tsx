@@ -27,7 +27,7 @@ export const DeleteNICModal = withHandlePromise((props: DeleteNICModalProps) => 
       vmLikeEntity,
       getRemoveNICPatches(vmLikeEntity, nic),
     );
-    return handlePromise(promise, close);
+    return handlePromise(promise).then(close);
   };
 
   return (

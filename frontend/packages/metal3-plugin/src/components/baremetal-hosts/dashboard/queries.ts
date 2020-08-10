@@ -87,11 +87,11 @@ export const getMultilineUtilizationQueries = (nodeName: string) => ({
   [HostQuery.NETWORK_UTILIZATION]: [
     {
       query: getQuery(nodeName, nodeQueriesByNodeName[HostQuery.NETWORK_IN_UTILIZATION]),
-      desc: 'in',
+      desc: 'In',
     },
     {
       query: getQuery(nodeName, nodeQueriesByNodeName[HostQuery.NETWORK_OUT_UTILIZATION]),
-      desc: 'out',
+      desc: 'Out',
     },
   ],
 });

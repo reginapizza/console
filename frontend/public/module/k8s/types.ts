@@ -385,12 +385,6 @@ export type HorizontalPodAutoscalerKind = K8sResourceCommon & {
     maxReplicas: number;
     metrics?: HPAMetric[];
   };
-  status?: {
-    currentReplicas: number;
-    desiredReplicas: number;
-    currentMetrics: any;
-    conditions: NodeCondition[];
-  };
 };
 
 export type StorageClassResourceKind = {
@@ -1046,23 +1040,16 @@ export type VolumeSnapshotClassKind = K8sResourceCommon & {
 
 export type PersistentVolumeClaimKind = K8sResourceCommon & {
   spec: {
-    accessModes: string[];
+    accessModes: string;
     resources: {
       requests: {
         storage: string;
       };
     };
     storageClassName: string;
-    volumeMode?: string;
-    /* Parameters in a cloned PVC */
-    dataSource?: {
-      name: string;
-      kind: string;
-      apiGroup: string;
-    };
-    /**/
+    volumeMode: string;
   };
-  status?: {
+  status: {
     phase: string;
   };
 };

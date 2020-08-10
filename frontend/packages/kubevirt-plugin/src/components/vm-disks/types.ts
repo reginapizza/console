@@ -12,7 +12,6 @@ export type StorageSimpleData = {
   diskInterface?: string;
   size?: string;
   storageClass?: string;
-  type?: DiskType;
 };
 
 export type StorageSimpleDataValidation = {
@@ -22,7 +21,6 @@ export type StorageSimpleDataValidation = {
   diskInterface?: ValidationObject;
   size?: ValidationObject;
   storageClass?: ValidationObject;
-  type?: ValidationObject;
 };
 
 export type StorageBundle = StorageSimpleData & {

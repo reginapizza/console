@@ -7,7 +7,6 @@ import { HorizontalPodAutoscalerKind, K8sResourceCommon } from '@console/interna
 import HPADetailsForm from './HPADetailsForm';
 import { sanitizeHPAToForm } from './hpa-utils';
 import { HPAFormValues } from './types';
-import { HorizontalPodAutoscalerModel } from '@console/internal/models';
 
 type HPAFormProps = {
   targetResource: K8sResourceCommon;
@@ -26,13 +25,7 @@ const HPAForm: React.FC<FormikProps<HPAFormValues> & HPAFormProps> = ({
 }) => {
   const isForm = values.editorType === EditorType.Form;
   const formEditor = <HPADetailsForm />;
-  const yamlEditor = (
-    <YAMLEditorField
-      name="yamlData"
-      onSave={handleSubmit}
-      schemaModel={HorizontalPodAutoscalerModel}
-    />
-  );
+  const yamlEditor = <YAMLEditorField name="yamlData" onSave={handleSubmit} />;
   const customMetrics = false;
 
   React.useEffect(() => {
@@ -62,7 +55,7 @@ const HPAForm: React.FC<FormikProps<HPAFormValues> & HPAFormProps> = ({
         errorMessage={status?.submitError}
         isSubmitting={isSubmitting}
         submitLabel="Save"
-        disableSubmit={isForm && !isEmpty(errors)}
+        disableSubmit={isForm && (!isEmpty(errors) || status?.submitError)}
         resetLabel="Cancel"
         sticky
       />

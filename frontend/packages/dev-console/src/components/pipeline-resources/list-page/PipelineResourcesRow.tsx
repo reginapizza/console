@@ -21,7 +21,7 @@ const PipelineResourcesRow: RowFunction<PipelineResourceKind> = ({ obj, index, k
           data-test-id={obj.metadata.name}
         />
       </TableData>
-      <TableData className={tableColumnClasses[1]} columnID="namespace">
+      <TableData className={tableColumnClasses[1]}>
         <ResourceLink kind="Namespace" name={obj.metadata.namespace} />
       </TableData>
       <TableData className={tableColumnClasses[2]}>

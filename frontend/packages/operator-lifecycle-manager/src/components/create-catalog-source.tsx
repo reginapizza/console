@@ -60,8 +60,7 @@ export const CreateCatalogSource: React.FC<CreateCatalogSourceProps> = withHandl
               sourceType: 'grpc',
             },
           }),
-          () => history.goBack(),
-        );
+        ).then(() => history.goBack());
       },
       [availability, displayName, handlePromise, image, name, namespace, publisher],
     );

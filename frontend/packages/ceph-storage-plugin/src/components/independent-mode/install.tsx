@@ -14,7 +14,6 @@ import {
   k8sCreate,
   referenceForModel,
   apiVersionForModel,
-  k8sList,
 } from '@console/internal/module/k8s';
 import { ClusterServiceVersionModel } from '@console/operator-lifecycle-manager';
 import {
@@ -29,14 +28,14 @@ import {
   TextArea,
 } from '@patternfly/react-core';
 import { history } from '@console/internal/components/utils/router';
-import { SecretModel, PodModel } from '@console/internal/models';
+import { SecretModel } from '@console/internal/models';
 import { setFlag } from '@console/internal/actions/features';
 import { getName } from '@console/shared';
 import { OCSServiceModel } from '../../models';
 import FileUpload from './fileUpload';
-import { isValidJSON, checkError, prettifyJSON, getIPFamily } from './utils';
+import { isValidJSON, checkError, prettifyJSON } from './utils';
 import { OCS_INDEPENDENT_FLAG, OCS_FLAG } from '../../features';
-import { OCS_EXTERNAL_CR_NAME, IP_FAMILY } from '../../constants';
+import { OCS_EXTERNAL_CR_NAME } from '../../constants';
 import './install.scss';
 
 const CreateExternalCluster = withHandlePromise((props: CreateExternalClusterProps) => {
@@ -53,18 +52,9 @@ const CreateExternalCluster = withHandlePromise((props: CreateExternalClusterPro
   const [clusterServiceVersion, setClusterServiceVersion] = React.useState(null);
   const [fileData, setFileData] = React.useState('');
   const [dataError, setDataError] = React.useState('');
-  const [ipFamily, setIPFamily] = React.useState(IP_FAMILY.IPV4);
   const dispatch = useDispatch();
 
   const plainKeys = _.concat(configMaps, storageClasses);
-
-  React.useEffect(() => {
-    // eslint-disable-next-line promise/catch-or-return
-    k8sList(PodModel).then((pods) => {
-      const address = pods[0].status.podIP;
-      setIPFamily(getIPFamily(address));
-    });
-  }, []);
 
   // File Upload handler
   const onUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +64,7 @@ const CreateExternalCluster = withHandlePromise((props: CreateExternalClusterPro
     reader.onload = (ev) => {
       const data = ev.target?.result as string;
       if (isValidJSON(data)) {
-        setDataError(checkError(data, plainKeys, encodedKeys, ipFamily));
+        setDataError(checkError(data, plainKeys, encodedKeys));
         setFileData(data);
       } else {
         setDataError('The uploaded file is not a valid JSON file');
@@ -117,9 +107,8 @@ const CreateExternalCluster = withHandlePromise((props: CreateExternalClusterPro
       },
     };
 
-    handlePromise(
-      Promise.all([k8sCreate(SecretModel, secret), k8sCreate(OCSServiceModel, ocsObj)]),
-      (data) => {
+    handlePromise(Promise.all([k8sCreate(SecretModel, secret), k8sCreate(OCSServiceModel, ocsObj)]))
+      .then((data) => {
         dispatch(setFlag(OCS_INDEPENDENT_FLAG, true));
         dispatch(setFlag(OCS_FLAG, true));
         history.push(
@@ -127,8 +116,11 @@ const CreateExternalCluster = withHandlePromise((props: CreateExternalClusterPro
             clusterServiceVersion,
           )}/${referenceForModel(OCSServiceModel)}/${getName(data[data.length - 1])}`,
         );
-      },
-    );
+      })
+      .catch((e) => {
+        // eslint-disable-next-line no-console
+        console.error(e);
+      });
   };
 
   const onCancel = () => {

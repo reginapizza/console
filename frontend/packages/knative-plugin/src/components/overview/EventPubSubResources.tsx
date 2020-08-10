@@ -4,10 +4,6 @@ import { OverviewItem } from '@console/shared';
 import { referenceFor, K8sResourceKind } from '@console/internal/module/k8s';
 import { ResourceLink, SidebarSectionHeading } from '@console/internal/components/utils';
 import { EventingSubscriptionModel, EventingTriggerModel, EventingBrokerModel } from '../../models';
-import PubSubSubscribers from './EventPubSubSubscribers';
-import EventTriggerFilterList from './EventTriggerFilterList';
-import { FilterTableRowProps } from './FilterTable';
-import { Subscriber } from '../../topology/topology-types';
 
 type PubSubResourceOverviewListProps = {
   items: K8sResourceKind[];
@@ -19,13 +15,9 @@ type EventPubSubResourcesProps = {
     triggers?: K8sResourceKind[];
     eventSources?: K8sResourceKind[];
     eventingsubscription?: K8sResourceKind[];
+    connections?: K8sResourceKind[];
     pods?: K8sResourceKind[];
     deployments?: K8sResourceKind[];
-    brokers?: K8sResourceKind[];
-    channels?: K8sResourceKind[];
-    ksservices?: K8sResourceKind[];
-    filters?: FilterTableRowProps;
-    subscribers?: Subscriber[];
   };
 };
 
@@ -58,37 +50,23 @@ const EventPubSubResources: React.FC<EventPubSubResourcesProps> = ({ item }) => 
     obj,
     ksservices = [],
     eventSources = [],
+    eventingsubscription = [],
+    triggers = [],
+    connections = [],
     pods = [],
     deployments = [],
-    brokers = [],
-    channels = [],
-    filters = [],
-    subscribers = [],
   } = item;
 
   switch (obj.kind) {
     case EventingTriggerModel.kind:
-      return (
-        <>
-          <PubSubResourceOverviewList items={eventSources} title="Event Sources" />
-          <PubSubResourceOverviewList items={brokers} title="Broker" />
-          <PubSubResourceOverviewList items={ksservices} title="Subscriber" />
-          <EventTriggerFilterList filters={filters} />
-        </>
-      );
     case EventingSubscriptionModel.kind:
-      return (
-        <>
-          <PubSubResourceOverviewList items={eventSources} title="Event Sources" />
-          <PubSubResourceOverviewList items={channels} title="Channel" />
-          <PubSubResourceOverviewList items={ksservices} title="Subscriber" />
-        </>
-      );
+      return <PubSubResourceOverviewList items={connections} title="Connections" />;
     case EventingBrokerModel.kind:
       return (
         <>
+          <PubSubResourceOverviewList items={ksservices} title="Knative Services" />
           <PubSubResourceOverviewList items={eventSources} title="Event Sources" />
-          <PubSubSubscribers subscribers={subscribers} />
+          <PubSubResourceOverviewList items={triggers} title="Triggers" />
           <PubSubResourceOverviewList items={pods} title="Pods" />
           <PubSubResourceOverviewList items={deployments} title="Deployments" />
         </>
@@ -96,8 +74,9 @@ const EventPubSubResources: React.FC<EventPubSubResourcesProps> = ({ item }) => 
     default:
       return (
         <>
+          <PubSubResourceOverviewList items={ksservices} title="Knative Services" />
           <PubSubResourceOverviewList items={eventSources} title="Event Sources" />
-          <PubSubSubscribers subscribers={subscribers} />
+          <PubSubResourceOverviewList items={eventingsubscription} title="Subscriptions" />
         </>
       );
   }

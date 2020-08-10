@@ -23,7 +23,7 @@ const DisableDefaultSourceModal: React.FC<DisableSourceModalProps> = ({
   handlePromise,
 }) => {
   const submit = React.useCallback(
-    (event: React.FormEvent<EventTarget>): void => {
+    (event: React.FormEvent<EventTarget>): Promise<any> => {
       event.preventDefault();
       const currentSources = _.get(operatorHub, 'spec.sources', []);
       const patch = [
@@ -39,7 +39,7 @@ const DisableDefaultSourceModal: React.FC<DisableSourceModalProps> = ({
           ],
         },
       ];
-      return handlePromise(k8sPatch(kind, operatorHub, patch), close);
+      return handlePromise(k8sPatch(kind, operatorHub, patch)).then(close);
     },
     [close, handlePromise, kind, operatorHub, sourceName],
   );

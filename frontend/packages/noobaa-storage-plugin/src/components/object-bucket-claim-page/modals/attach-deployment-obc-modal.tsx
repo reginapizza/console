@@ -100,16 +100,14 @@ const AttachDeploymentToOBCModal = withHandlePromise((props: AttachDeploymentToO
 
   const submit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
-    handlePromise(
-      k8sPatch(DeploymentModel, requestDeployment, getPatches()),
-      (res) => {
+    handlePromise(k8sPatch(DeploymentModel, requestDeployment, getPatches()))
+      .then((res) => {
         history.push(`${resourceObjPath(res, referenceFor(res))}/environment`);
         close();
-      },
-      () => {
+      })
+      .catch(() => {
         close();
-      },
-    );
+      });
   };
 
   return (

@@ -4,23 +4,18 @@ import PopoverStatus from './PopoverStatus';
 import StatusIconAndText from './StatusIconAndText';
 
 const GenericStatus: React.FC<GenericStatusProps> = (props) => {
-  const { Icon, children, popoverTitle, title, ...restProps } = props;
+  const { Icon, children, ...restProps } = props;
   return React.Children.toArray(children).length ? (
-    <PopoverStatus
-      title={popoverTitle || title}
-      {...restProps}
-      statusBody={<StatusIconAndText {...restProps} title={title} icon={<Icon />} />}
-    >
+    <PopoverStatus {...restProps} statusBody={<StatusIconAndText {...restProps} icon={<Icon />} />}>
       {children}
     </PopoverStatus>
   ) : (
-    <StatusIconAndText {...restProps} title={title} icon={<Icon />} />
+    <StatusIconAndText {...restProps} icon={<Icon />} />
   );
 };
 
 type GenericStatusProps = StatusComponentProps & {
   Icon: React.ComponentType<{}>;
-  popoverTitle?: string;
 };
 
 export default GenericStatus;

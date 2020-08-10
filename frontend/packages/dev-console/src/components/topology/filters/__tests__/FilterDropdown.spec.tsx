@@ -3,13 +3,7 @@ import { mount, shallow } from 'enzyme';
 import { SelectOption, Switch } from '@patternfly/react-core';
 import FilterDropdown from '../FilterDropdown';
 import { DisplayFilters } from '../../topology-types';
-import {
-  DEFAULT_TOPOLOGY_FILTERS,
-  EXPAND_APPLICATION_GROUPS_FILTER_ID,
-  EXPAND_GROUPS_FILTER_ID,
-  SHOW_GROUPS_FILTER_ID,
-} from '../const';
-import { getFilterById } from '../filter-utils';
+import { DEFAULT_TOPOLOGY_FILTERS, EXPAND_APPLICATION_GROUPS_FILTER_ID } from '../const';
 
 describe(FilterDropdown.displayName, () => {
   let dropdownFilter: DisplayFilters;
@@ -56,7 +50,7 @@ describe(FilterDropdown.displayName, () => {
     expect(wrapper.find(SelectOption)).toHaveLength(1);
   });
 
-  it('should contain the show groups and expand groups switches', () => {
+  it('should contain the show expand groups switch', () => {
     const wrapper = mount(
       <FilterDropdown
         filters={dropdownFilter}
@@ -65,48 +59,6 @@ describe(FilterDropdown.displayName, () => {
         opened
       />,
     );
-    expect(wrapper.find(Switch)).toHaveLength(2);
-  });
-
-  it('should disable individual group expand when expand groups is false', () => {
-    getFilterById(EXPAND_GROUPS_FILTER_ID, dropdownFilter).value = false;
-    const wrapper = mount(
-      <FilterDropdown
-        filters={dropdownFilter}
-        supportedFilters={dropdownFilter.map((f) => f.id)}
-        onChange={onChange}
-        opened
-      />,
-    );
-    expect(
-      wrapper
-        .find(SelectOption)
-        .first()
-        .props().isDisabled,
-    ).toBeTruthy();
-  });
-
-  it('should disable expand groups and individual group expands when show groups is false', () => {
-    getFilterById(SHOW_GROUPS_FILTER_ID, dropdownFilter).value = false;
-    const wrapper = mount(
-      <FilterDropdown
-        filters={dropdownFilter}
-        supportedFilters={dropdownFilter.map((f) => f.id)}
-        onChange={onChange}
-        opened
-      />,
-    );
-    expect(
-      wrapper
-        .find(Switch)
-        .at(1)
-        .props().isDisabled,
-    ).toBeTruthy();
-    expect(
-      wrapper
-        .find(SelectOption)
-        .first()
-        .props().isDisabled,
-    ).toBeTruthy();
+    expect(wrapper.find(Switch)).toHaveLength(1);
   });
 });

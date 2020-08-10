@@ -11,6 +11,7 @@ import {
   getVMIAffinity,
 } from '../../../selectors/vmi';
 import { VMILikeMethods } from './types';
+import { transformDevices } from '../../../selectors/vm';
 import { findKeySuffixValue } from '../../../selectors/utils';
 import {
   TEMPLATE_FLAVOR_LABEL,
@@ -18,9 +19,6 @@ import {
   TEMPLATE_WORKLOAD_LABEL,
 } from '../../../constants/vm';
 import { VirtualMachineInstanceModel } from '../../../models';
-import { transformDevices } from '../../../selectors/vm/devices';
-import { V1Disk } from '../../../types/vm/disk/V1Disk';
-import { V1Volume } from '../../../types/vm/disk/V1Volume';
 
 export class VMIWrapper extends K8sResourceWrapper<VMIKind, VMIWrapper> implements VMILikeMethods {
   constructor(vmi?: VMIKind | VMIWrapper | any, copy = false) {
@@ -42,11 +40,6 @@ export class VMIWrapper extends K8sResourceWrapper<VMIKind, VMIWrapper> implemen
   getNetworks = (defaultValue = []) => getVMINetworks(this.data, defaultValue);
 
   getVolumes = (defaultValue = []) => getVMIVolumes(this.data, defaultValue);
-
-  getVolumesOfDisks = (disks: V1Disk[]): V1Volume[] => {
-    const diskNames = disks.map((disk) => disk?.name);
-    return this.getVolumes().filter((vol) => diskNames.includes(vol.name));
-  };
 
   getLabeledDevices = () => transformDevices(this.getDisks(), this.getNetworkInterfaces());
 

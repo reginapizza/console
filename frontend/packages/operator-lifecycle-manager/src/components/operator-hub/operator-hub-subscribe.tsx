@@ -24,7 +24,6 @@ import {
   k8sGet,
   k8sListPartialMetadata,
   kindForReference,
-  referenceFor,
   referenceForModel,
 } from '@console/internal/module/k8s';
 import { RadioGroup, RadioInput } from '@console/internal/components/radio';
@@ -98,26 +97,6 @@ export const OperatorHubSubscribeForm: React.FC<OperatorHubSubscribeFormProps> =
     currentCSVDesc.annotations?.['operatorframework.io/suggested-namespace'];
   const operatorRequestsMonitoring =
     currentCSVDesc.annotations?.['operatorframework.io/cluster-monitoring'] === 'true';
-  const initializationResourceJSON =
-    currentCSVDesc.annotations?.['operatorframework.io/initialization-resource'];
-
-  let initializationResourceReference = null;
-  if (initializationResourceJSON) {
-    let initializationResource = null;
-    try {
-      initializationResource = JSON.parse(initializationResourceJSON);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(
-        err.message || 'Operator Hub Subscribe: Could not get initialization resource.',
-      );
-    }
-
-    initializationResourceReference = initializationResource
-      ? referenceFor(initializationResource)
-      : null;
-  }
-
   const internalObjects = getInternalObjects(currentCSVDesc, 'annotations');
 
   const globalNS =
@@ -686,7 +665,6 @@ export const OperatorHubSubscribeForm: React.FC<OperatorHubSubscribeFormProps> =
                     canCreate={false}
                     crd={api}
                     csv={null}
-                    required={referenceForProvidedAPI(api) === initializationResourceReference}
                   />
                 ))
               )}

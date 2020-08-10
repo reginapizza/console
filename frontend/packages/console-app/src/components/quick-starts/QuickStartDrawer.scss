@@ -1,7 +1,6 @@
 .co-quick-start-drawer {
   &__title {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
+    display: inline-block;
+    padding-right: var(--pf-global--spacer--md) !important;
   }
 }

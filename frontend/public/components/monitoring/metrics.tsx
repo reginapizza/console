@@ -3,6 +3,8 @@ import * as _ from 'lodash-es';
 import { List as ImmutableList } from 'immutable';
 import {
   ActionGroup,
+  Alert,
+  AlertActionCloseButton,
   Button,
   EmptyState,
   EmptyStateBody,
@@ -222,21 +224,34 @@ export const ToggleGraph = connect(graphStateToProps, { toggle: UIActions.monito
   ToggleGraph_,
 );
 
-const MetricsDropdown_: React.FC<MetricsDropdownProps> = ({ insertText, setMetrics }) => {
+const MetricsDropdown_: React.FC<MetricsDropdownProps> = ({
+  insertText,
+  namespace,
+  setMetrics,
+}) => {
   const [items, setItems] = React.useState<MetricsDropdownItems>();
   const [isError, setIsError] = React.useState(false);
 
   const safeFetch = React.useCallback(useSafeFetch(), []);
 
   React.useEffect(() => {
-    safeFetch(`${PROMETHEUS_BASE_PATH}/${PrometheusEndpoint.LABEL}/__name__/values`)
+    const url = namespace
+      ? getPrometheusURL({
+          endpoint: PrometheusEndpoint.QUERY,
+          namespace,
+          query: `count({namespace="${namespace}"}) by (__name__)`,
+        })
+      : `${PROMETHEUS_BASE_PATH}/${PrometheusEndpoint.LABEL}/__name__/values`;
+    safeFetch(url)
       .then((response) => {
-        const metrics = response?.data;
+        const metrics = namespace
+          ? _.map(_.get(response, 'data.result'), 'metric.__name__').sort()
+          : _.get(response, 'data');
         setItems(_.zipObject(metrics, metrics));
         setMetrics(metrics);
       })
       .catch(() => setIsError(true));
-  }, [safeFetch, setMetrics]);
+  }, [namespace, safeFetch, setMetrics]);
 
   const onChange = (metric: string) => {
     // Replace the currently selected text with the metric
@@ -280,7 +295,7 @@ const MetricsDropdown_: React.FC<MetricsDropdownProps> = ({ insertText, setMetri
     />
   );
 };
-const MetricsDropdown = connect(null, {
+const MetricsDropdown: React.ComponentType<{ namespace?: string }> = connect(null, {
   insertText: UIActions.queryBrowserInsertText,
   setMetrics: UIActions.queryBrowserSetMetrics,
 })(MetricsDropdown_);
@@ -792,11 +807,30 @@ const QueryTable_: React.FC<QueryTableProps> = ({
 };
 export const QueryTable = connect(queryTableStateToProps, queryDispatchToProps)(QueryTable_);
 
+const NamespaceAlert_: React.FC<{ dismiss: () => undefined; isDismissed: boolean }> = ({
+  dismiss,
+  isDismissed,
+}) =>
+  isDismissed ? null : (
+    <Alert
+      actionClose={<AlertActionCloseButton onClose={dismiss} />}
+      isInline
+      className="co-alert"
+      title="Queries entered here are limited to the data available in the currently selected project."
+      variant="info"
+    />
+  );
+const NamespaceAlert: React.ComponentType<{}> = connect(
+  ({ UI }: RootState) => ({ isDismissed: !!UI.getIn(['queryBrowser', 'dismissNamespaceAlert']) }),
+  { dismiss: UIActions.queryBrowserDismissNamespaceAlert },
+)(NamespaceAlert_);
+
 const Query_: React.FC<QueryProps> = ({
   id,
   index,
   isExpanded,
   isEnabled,
+  namespace,
   patchQuery,
   toggleIsEnabled,
 }) => {
@@ -813,7 +847,7 @@ const Query_: React.FC<QueryProps> = ({
     >
       <div className="query-browser__query-controls">
         <ExpandButton isExpanded={isExpanded} onClick={toggleIsExpanded} />
-        <QueryInput index={index} />
+        <QueryInput index={index} namespace={namespace} />
         <div title={switchLabel}>
           <Switch
             aria-label={switchLabel}
@@ -827,7 +861,7 @@ const Query_: React.FC<QueryProps> = ({
           <QueryKebab index={index} />
         </div>
       </div>
-      <QueryTable index={index} />
+      <QueryTable index={index} namespace={namespace} />
     </div>
   );
 };
@@ -840,7 +874,11 @@ const Query = connect(
   queryDispatchToProps,
 )(Query_);
 
-const QueryBrowserWrapper_: React.FC<QueryBrowserWrapperProps> = ({ patchQuery, queriesList }) => {
+const QueryBrowserWrapper_: React.FC<QueryBrowserWrapperProps> = ({
+  namespace,
+  patchQuery,
+  queriesList,
+}) => {
   const queries = queriesList.toJS();
 
   // Initialize queries from URL parameters
@@ -875,7 +913,12 @@ const QueryBrowserWrapper_: React.FC<QueryBrowserWrapperProps> = ({ patchQuery, 
   const insertExampleQuery = () => {
     const focusedIndex = focusedQuery?.index ?? 0;
     const index = queries[focusedIndex] ? focusedIndex : 0;
-    const text = 'sort_desc(sum(sum_over_time(ALERTS{alertstate="firing"}[24h])) by (alertname))';
+
+    // Pick a suitable example query based on whether we are limiting results to a single namespace
+    const text = namespace
+      ? 'sum(rate(container_cpu_usage_seconds_total{image!="", container!="POD"}[5m])) by (pod)'
+      : 'sort_desc(sum(sum_over_time(ALERTS{alertstate="firing"}[24h])) by (alertname))';
+
     patchQuery(index, { isEnabled: true, query: text, text });
   };
 
@@ -898,6 +941,7 @@ const QueryBrowserWrapper_: React.FC<QueryBrowserWrapperProps> = ({ patchQuery, 
     <QueryBrowser
       defaultTimespan={30 * 60 * 1000}
       disabledSeries={disabledSeries}
+      namespace={namespace}
       queries={queryStrings}
     />
   );
@@ -928,10 +972,10 @@ const RunQueriesButton = connect(null, { runQueries: UIActions.queryBrowserRunQu
   RunQueriesButton_,
 );
 
-const QueriesList_ = ({ count }) => (
+const QueriesList_ = ({ count, namespace }) => (
   <>
     {_.range(count).map((i) => (
-      <Query index={i} key={i} />
+      <Query index={i} key={i} namespace={namespace} />
     ))}
   </>
 );
@@ -948,7 +992,7 @@ const PollIntervalDropdown = connect(
   },
 )(IntervalDropdown);
 
-const QueryBrowserPage_: React.FC<QueryBrowserPageProps> = ({ deleteAll }) => {
+const QueryBrowserPage_: React.FC<QueryBrowserPageProps> = ({ deleteAll, namespace }) => {
   // Clear queries on unmount
   React.useEffect(() => deleteAll, [deleteAll]);
 
@@ -970,6 +1014,7 @@ const QueryBrowserPage_: React.FC<QueryBrowserPageProps> = ({ deleteAll }) => {
         </h1>
       </div>
       <div className="co-m-pane__body">
+        {namespace && <NamespaceAlert />}
         <div className="row">
           <div className="col-xs-12">
             <ToggleGraph />
@@ -977,10 +1022,10 @@ const QueryBrowserPage_: React.FC<QueryBrowserPageProps> = ({ deleteAll }) => {
         </div>
         <div className="row">
           <div className="col-xs-12">
-            <QueryBrowserWrapper />
+            <QueryBrowserWrapper namespace={namespace} />
             <div className="query-browser__controls">
               <div className="query-browser__controls--left">
-                <MetricsDropdown />
+                <MetricsDropdown namespace={namespace} />
               </div>
               <div className="query-browser__controls--right">
                 <ActionGroup className="pf-c-form pf-c-form__group--no-top-margin">
@@ -989,14 +1034,14 @@ const QueryBrowserPage_: React.FC<QueryBrowserPageProps> = ({ deleteAll }) => {
                 </ActionGroup>
               </div>
             </div>
-            <QueriesList />
+            <QueriesList namespace={namespace} />
           </div>
         </div>
       </div>
     </>
   );
 };
-export const QueryBrowserPage = withFallback(
+export const QueryBrowserPage: React.ComponentType<{ namespace?: string }> = withFallback(
   connect(null, { deleteAll: UIActions.queryBrowserDeleteAllQueries })(QueryBrowserPage_),
 );
 
@@ -1013,14 +1058,17 @@ type MetricsDropdownItems = {
 
 type MetricsDropdownProps = {
   insertText: (index: number, newText: string, replaceFrom: number, replaceTo: number) => never;
+  namespace?: string;
   setMetrics: (metrics: string[]) => never;
 };
 
 type QueryBrowserPageProps = {
   deleteAll: () => never;
+  namespace?: string;
 };
 
 type QueryBrowserWrapperProps = {
+  namespace?: string;
   patchQuery: (index: number, patch: QueryObj) => any;
   queriesList: ImmutableList<QueryObj>;
 };
@@ -1047,6 +1095,7 @@ type QueryProps = {
   index: number;
   isEnabled: boolean;
   isExpanded: boolean;
+  namespace?: string;
   patchQuery: (patch: QueryObj) => void;
   toggleIsEnabled: () => never;
 };

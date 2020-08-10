@@ -16,6 +16,7 @@ import {
 } from '@patternfly/react-topology';
 import { useSearchFilter } from '../../filters/useSearchFilter';
 import { NodeShadows, NODE_SHADOW_FILTER_ID, NODE_SHADOW_FILTER_ID_HOVER } from '../NodeShadows';
+import { getTopologyResourceObject } from '../../topology-utils';
 import { GroupNode } from './GroupNode';
 import { ApplicationModel } from '../../../../models';
 
@@ -48,7 +49,7 @@ const ApplicationNode: React.FC<ApplicationGroupProps> = ({
 
   const resourcesData = {};
   _.forEach(element.getData().groupResources, (res) => {
-    const a = res.resource;
+    const a = getTopologyResourceObject(res);
     resourcesData[a.kind] = [...(resourcesData[a.kind] ? resourcesData[a.kind] : []), a];
   });
 

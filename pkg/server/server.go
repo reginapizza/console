@@ -47,7 +47,6 @@ const (
 	meteringProxyEndpoint          = "/api/metering"
 	customLogoEndpoint             = "/custom-logo"
 	helmChartRepoProxyEndpoint     = "/api/helm/charts/"
-	gitopsEndpoint                 = "/api/gitops/"
 )
 
 var (
@@ -113,13 +112,11 @@ type Server struct {
 	AlertManagerProxyConfig          *proxy.Config
 	MeteringProxyConfig              *proxy.Config
 	TerminalProxyTLSConfig           *tls.Config
-	GitOpsProxyConfig                *proxy.Config
 	// A lister for resource listing of a particular kind
 	MonitoringDashboardConfigMapLister ResourceLister
 	KnativeEventSourceCRDLister        ResourceLister
 	KnativeChannelCRDLister            ResourceLister
 	HelmChartRepoProxyConfig           *proxy.Config
-	HelmDefaultRepoCACert              []byte
 	GOARCH                             string
 	GOOS                               string
 	// Monitoring and Logging related URLs
@@ -143,10 +140,6 @@ func (s *Server) alertManagerProxyEnabled() bool {
 
 func (s *Server) meteringProxyEnabled() bool {
 	return s.MeteringProxyConfig != nil
-}
-
-func (s *Server) gitopsProxyEnabled() bool {
-	return s.GitOpsProxyConfig != nil
 }
 
 func (s *Server) HTTPHandler() http.Handler {
@@ -376,12 +369,11 @@ func (s *Server) HTTPHandler() http.Handler {
 	handle("/api/console/version", authHandler(s.versionHandler))
 
 	// Helm Endpoints
-	helmHandlers := helmhandlerspkg.New(s.KubeAPIServerURL, s.K8sClient.Transport, s.HelmDefaultRepoCACert)
+	helmHandlers := helmhandlerspkg.New(s.KubeAPIServerURL, s.K8sClient.Transport)
 	handle("/api/helm/template", authHandlerWithUser(helmHandlers.HandleHelmRenderManifests))
 	handle("/api/helm/releases", authHandlerWithUser(helmHandlers.HandleHelmList))
 	handle("/api/helm/chart", authHandlerWithUser(helmHandlers.HandleChartGet))
 	handle("/api/helm/release/history", authHandlerWithUser(helmHandlers.HandleGetReleaseHistory))
-	handle("/api/helm/charts/index.yaml", authHandlerWithUser(helmHandlers.HandleGetRepos))
 
 	handle("/api/helm/release", authHandlerWithUser(func(user *auth.User, w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -401,17 +393,12 @@ func (s *Server) HTTPHandler() http.Handler {
 		}
 	}))
 
-	// GitOps proxy endpoints
-	if s.gitopsProxyEnabled() {
-		gitopsProxy := proxy.NewProxy(s.GitOpsProxyConfig)
-		handle(gitopsEndpoint, http.StripPrefix(
-			proxy.SingleJoiningSlash(s.BaseURL.Path, gitopsEndpoint),
-			authHandlerWithUser(func(user *auth.User, w http.ResponseWriter, r *http.Request) {
-				r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", user.Token))
-				gitopsProxy.ServeHTTP(w, r)
-			})),
-		)
-	}
+	helmChartRepoProxy := proxy.NewProxy(s.HelmChartRepoProxyConfig)
+
+	// Only proxy requests to chart repo index file
+	handle(helmChartRepoProxyEndpoint+"index.yaml", http.StripPrefix(
+		proxy.SingleJoiningSlash(s.BaseURL.Path, helmChartRepoProxyEndpoint),
+		http.HandlerFunc(helmChartRepoProxy.ServeHTTP)))
 
 	mux.HandleFunc(s.BaseURL.Path, s.indexHandler)
 

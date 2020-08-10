@@ -256,7 +256,6 @@ const providerUpdater = (options: UpdateOptions) => {
       [VMSettingsField.NAME]: vmFieldUpdate,
       [VMSettingsField.DESCRIPTION]: vmFieldUpdate,
       [VMSettingsField.OPERATING_SYSTEM]: vmFieldUpdate,
-      [VMSettingsField.CLONE_COMMON_BASE_DISK_IMAGE]: vmFieldUpdate,
       [VMSettingsField.FLAVOR]: vmFieldUpdate,
       [VMSettingsField.MEMORY]: vmFieldUpdate,
       [VMSettingsField.CPU]: vmFieldUpdate,

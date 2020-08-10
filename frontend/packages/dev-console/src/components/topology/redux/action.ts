@@ -5,7 +5,6 @@ import { DisplayFilters } from '../topology-types';
 export enum Actions {
   topologyFilters = 'topologyFilters',
   supportedTopologyFilters = 'supportedTopologyFilters',
-  supportedTopologyKinds = 'supportedTopologyKinds',
 }
 
 export const getAppliedFilters = (filters: DisplayFilters): { [id: string]: boolean } => {
@@ -31,14 +30,9 @@ export const setSupportedTopologyFilters = (supportedFilters: string[]) => {
   return action(Actions.supportedTopologyFilters, { supportedFilters });
 };
 
-export const setSupportedTopologyKinds = (supportedKinds: { [key: string]: number }) => {
-  return action(Actions.supportedTopologyKinds, { supportedKinds });
-};
-
 const actions = {
   setTopologyFilters,
   setSupportedTopologyFilters,
-  setSupportedTopologyKinds,
 };
 
 export type TopologyAction = ActionType<typeof actions>;

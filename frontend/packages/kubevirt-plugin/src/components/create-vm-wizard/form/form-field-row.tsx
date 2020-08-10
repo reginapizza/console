@@ -13,7 +13,7 @@ const isLoading = (loadingResources?: { [k: string]: any }) =>
   _.some(Object.keys(loadingResources), (key) => !iGetIsLoaded(loadingResources[key]));
 
 export const FormFieldInnerRow: React.FC<FieldFormInnerRowProps> = React.memo(
-  ({ field, fieldType, fieldHelp, children, loadingResources, validation, className }) => {
+  ({ field, fieldType, fieldHelp, children, loadingResources, validation }) => {
     const fieldKey = iGet(field, 'key');
     const loading = isLoading(loadingResources);
 
@@ -29,7 +29,6 @@ export const FormFieldInnerRow: React.FC<FieldFormInnerRowProps> = React.memo(
         validationType={validation ? undefined : iGetIn(field, ['validation', 'type'])}
         isLoading={loading}
         validation={validation}
-        className={className}
       >
         <FormFieldContext.Provider value={{ field, fieldType, isLoading: loading }}>
           {children}
@@ -46,7 +45,6 @@ type FieldFormInnerRowProps = {
   children?: React.ReactNode;
   loadingResources?: { [k: string]: any };
   validation?: ValidationObject;
-  className?: string;
 };
 
 export const FormFieldInnerMemoRow = React.memo(
@@ -67,7 +65,6 @@ export const FormFieldRow: React.FC<FieldFormRowProps> = ({
   loadingResources,
   validation,
   memoize,
-  className,
 }) => {
   const fieldKey = iGet(field, 'key');
 
@@ -84,7 +81,6 @@ export const FormFieldRow: React.FC<FieldFormRowProps> = ({
       fieldHelp={fieldHelp}
       loadingResources={loadingResources}
       validation={validation}
-      className={className}
     >
       {children}
     </Component>
@@ -99,7 +95,6 @@ type FieldFormRowProps = {
   loadingResources?: { [k: string]: any };
   validation?: ValidationObject;
   memoize?: boolean;
-  className?: string;
 };
 
 export const FormFieldMemoRow: React.FC<FormFieldMemoRowProps> = (props) => (

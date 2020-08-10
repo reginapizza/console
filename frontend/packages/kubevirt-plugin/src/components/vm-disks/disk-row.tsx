@@ -100,7 +100,7 @@ export type VMDiskSimpleRowProps = {
 };
 
 export const DiskSimpleRow: React.FC<VMDiskSimpleRowProps> = ({
-  data: { name, source, size, diskInterface, storageClass, type },
+  data: { name, source, size, diskInterface, storageClass },
   validation = {},
   columnClasses,
   actionsComponent,
@@ -124,9 +124,6 @@ export const DiskSimpleRow: React.FC<VMDiskSimpleRowProps> = ({
         {!isSizeLoading && (
           <ValidationCell validation={validation.size}>{size || DASH}</ValidationCell>
         )}
-      </TableData>
-      <TableData className={dimensify()}>
-        <ValidationCell validation={validation.type}>{type?.toString()}</ValidationCell>
       </TableData>
       <TableData className={dimensify()}>
         <ValidationCell validation={validation.diskInterface}>{diskInterface}</ValidationCell>
