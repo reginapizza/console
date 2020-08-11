@@ -422,14 +422,10 @@ export const gitImportInitialValues: GitImportFormData = {
     secret: '',
     isUrlValidating: false,
   },
-  docker: { 
-    dockerfilePath: 'Dockerfile', 
-    containerPort: 8080  
+  docker: {
+    dockerfilePath: 'Dockerfile',
+    containerPort: 8080,
   },
-  // devfile: { 
-  //   devfilePath: 'devfile.yaml', 
-  //   containerPort: 8080 
-  // },
   image: {
     selected: 'python',
     recommended: '',
@@ -509,14 +505,10 @@ export const devfileImportInitialValues: GitImportFormData = {
     secret: '',
     isUrlValidating: false,
   },
-  docker: { 
-    dockerfilePath: 'Dockerfile', 
-    containerPort: 8080  
+  docker: {
+    dockerfilePath: 'Dockerfile',
+    containerPort: 8080,
   },
-  // devfile: { 
-  //   devfilePath: 'devfile.yaml', 
-  //   containerPort: 8080 
-  // },
   image: {
     selected: 'python',
     recommended: '',

@@ -52,7 +52,6 @@ export interface GitImportFormProps {
 }
 
 export interface DevfileImportFormProps {
-  builderImages?: NormalizedBuilderImages; //don't think this line is needed but leaving it in here anyway in case it breaks something
   projects?: {
     data: [];
     loaded: boolean;
@@ -101,7 +100,6 @@ export interface GitImportFormData {
   project: ProjectData;
   application: ApplicationData;
   git: GitData;
-  // devfile: DevfileData;
   docker: DockerData;
   serverless?: ServerlessData;
   pipeline?: PipelineData;
@@ -162,11 +160,6 @@ export interface DockerData {
   dockerfilePath?: string;
   containerPort?: number;
 }
-
-// export interface DevfileData {
-//   devfilePath?: string;
-//   containerPort?: number;
-// }
 
 export interface RouteData {
   disable?: boolean;
@@ -262,7 +255,7 @@ export interface ImportData {
   type: ImportTypes;
   title: string;
   buildStrategy: string;
-  loader: LazyLoader<GitImportFormProps | SourceToImageFormProps | DevfileImportFormProps >;
+  loader: LazyLoader<GitImportFormProps | SourceToImageFormProps | DevfileImportFormProps>;
 }
 
 export enum TerminationTypes {
