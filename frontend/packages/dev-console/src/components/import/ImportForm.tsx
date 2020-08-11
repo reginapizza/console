@@ -68,10 +68,6 @@ const ImportForm: React.FC<ImportFormProps & StateProps> = ({
       dockerfilePath: 'Dockerfile',
       containerPort: 8080,
     },
-    // devfile: {
-    //   devfilePath: 'devfile.yaml',
-    //   containerPort: 8080,
-    // },
     image: {
       selected: '',
       recommended: '',

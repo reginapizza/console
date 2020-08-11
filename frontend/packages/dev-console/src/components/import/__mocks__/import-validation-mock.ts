@@ -26,10 +26,6 @@ export const mockFormData: GitImportFormData = {
     dockerfilePath: 'Dockerfile',
     containerPort: 8080,
   },
-  // devfile: {
-  //   devfilePath: 'devfile.yaml',
-  //   containerPort: 8080,
-  // },
   image: {
     selected: 'nodejs',
     recommended: '',

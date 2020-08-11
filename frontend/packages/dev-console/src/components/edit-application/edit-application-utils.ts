@@ -281,7 +281,6 @@ export const getCommonInitialValues = (
   return commonInitialValues;
 };
 
-// how to incorporate this part into devfile?
 export const getGitAndDockerfileInitialValues = (
   buildConfig: K8sResourceKind,
   route: K8sResourceKind,
@@ -318,7 +317,7 @@ export const getGitAndDockerfileInitialValues = (
   return initialValues;
 };
 
-// added this but didn't change the data for it yet
+// added this but not sure data to include with it yet
 export const getGitAndDevfileInitialValues = (
   buildConfig: K8sResourceKind,
   route: K8sResourceKind,
@@ -341,10 +340,6 @@ export const getGitAndDevfileInitialValues = (
       ),
       containerPort: parseInt(_.split(_.get(route, 'spec.port.targetPort'), '-')[0], 10),
     },
-    // devfile: {
-    //   devfilePath: _.get(buildConfig, 'spec.strategy.devfileStrategy.devfilePath', 'Devfile'),
-    //   containerPort: parseInt(_.split(_.get(route, 'spec.port.targetPort'), '-')[0], 10),
-    // },
     image: {
       selected: currentImage[0] || '',
       recommended: '',
