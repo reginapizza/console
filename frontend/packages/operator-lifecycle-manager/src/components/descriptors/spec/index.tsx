@@ -1,6 +1,5 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { Map as ImmutableMap } from 'immutable';
 import { Button, Switch, Checkbox } from '@patternfly/react-core';
 import { EyeIcon, EyeSlashIcon } from '@patternfly/react-icons';
 import {
@@ -8,37 +7,20 @@ import {
   ResourceLink,
   Selector,
   DetailsItem,
+  LabelList,
 } from '@console/internal/components/utils';
-import { withFallback } from '@console/shared/src/components/error/error-boundary';
 import { k8sPatch, k8sUpdate } from '@console/internal/module/k8s';
-import { YellowExclamationTriangleIcon, getSchemaAtPath } from '@console/shared';
+import { YellowExclamationTriangleIcon } from '@console/shared';
 import { SecretValue } from '@console/internal/components/configmap-and-secret-data';
-import { CapabilityProps, DescriptorProps, SpecCapability, Error } from '../types';
+import { CapabilityProps, SpecCapability, Error } from '../types';
 import { ResourceRequirementsModalLink } from './resource-requirements';
 import { EndpointList } from './endpoint';
 import { configureSizeModal } from './configure-size';
 import { configureUpdateStrategyModal } from './configure-update-strategy';
-import { REGEXP_K8S_RESOURCE_SUFFIX } from '../const';
+import { DefaultCapability, K8sResourceLinkCapability } from '../common';
+import { getPatchPathFromDescriptor } from '../utils';
 
-const Default: React.SFC<SpecCapabilityProps> = ({ description, label, obj, fullPath, value }) => {
-  const detail = React.useMemo(() => {
-    if (_.isEmpty(value) && !_.isFinite(value) && !_.isBoolean(value)) {
-      return <span className="text-muted">None</span>;
-    }
-    if (_.isObject(value)) {
-      return <span className="text-muted">Unsupported</span>;
-    }
-    return <span>{_.toString(value)}</span>;
-  }, [value]);
-
-  return (
-    <DetailsItem description={description} label={label} obj={obj} path={fullPath}>
-      {detail}
-    </DetailsItem>
-  );
-};
-
-const PodCount: React.SFC<SpecCapabilityProps> = ({
+const PodCount: React.FC<SpecCapabilityProps> = ({
   description,
   descriptor,
   label,
@@ -65,25 +47,30 @@ const PodCount: React.SFC<SpecCapabilityProps> = ({
   </DetailsItem>
 );
 
-const Endpoints: React.SFC<SpecCapabilityProps> = ({
-  description,
-  label,
-  obj,
-  fullPath,
-  value,
-}) => (
+const Endpoints: React.FC<SpecCapabilityProps> = ({ description, label, obj, fullPath, value }) => (
   <DetailsItem description={description} label={label} obj={obj} path={fullPath}>
     <EndpointList endpoints={value} />
   </DetailsItem>
 );
 
-const Label: React.SFC<SpecCapabilityProps> = ({ description, label, obj, fullPath, value }) => (
+const Label: React.FC<SpecCapabilityProps> = ({
+  description,
+  label,
+  model,
+  obj,
+  fullPath,
+  value,
+}) => (
   <DetailsItem description={description} label={label} obj={obj} path={fullPath}>
-    {value || '--'}
+    {_.isObject(value) ? (
+      <LabelList kind={model.kind} labels={value} />
+    ) : (
+      <span>{value || '--'}</span>
+    )}
   </DetailsItem>
 );
 
-const NamespaceSelector: React.SFC<SpecCapabilityProps> = ({
+const NamespaceSelector: React.FC<SpecCapabilityProps> = ({
   description,
   label,
   obj,
@@ -99,7 +86,7 @@ const NamespaceSelector: React.SFC<SpecCapabilityProps> = ({
   </DetailsItem>
 );
 
-const ResourceRequirements: React.SFC<SpecCapabilityProps> = ({
+const ResourceRequirements: React.FC<SpecCapabilityProps> = ({
   description,
   descriptor,
   label,
@@ -120,52 +107,21 @@ const ResourceRequirements: React.SFC<SpecCapabilityProps> = ({
   </DetailsItem>
 );
 
-const K8sResourceLink: React.SFC<SpecCapabilityProps> = ({
+const BasicSelector: React.FC<SpecCapabilityProps> = ({
   capability,
   description,
-  descriptor,
   label,
   obj,
   fullPath,
   value,
 }) => {
-  const detail = React.useMemo(() => {
-    if (!value) {
-      return <span className="text-muted">None</span>;
-    }
-
-    const [, suffix] = capability.match(REGEXP_K8S_RESOURCE_SUFFIX) ?? [];
-    const gvk = suffix?.replace(/:/g, '~');
-    if (!_.isString(value)) {
-      return (
-        <>
-          <YellowExclamationTriangleIcon /> Invalid spec descriptor: value at path &apos;
-          {descriptor.path}&apos; must be a {gvk} resource name.
-        </>
-      );
-    }
-
-    return <ResourceLink kind={gvk} name={value} namespace={obj.metadata.namespace} />;
-  }, [capability, descriptor.path, value, obj.metadata.namespace]);
+  const [, kind] = capability.split(SpecCapability.selector);
   return (
     <DetailsItem description={description} label={label} obj={obj} path={fullPath}>
-      {detail}
+      <Selector selector={value} kind={kind?.replace(/:/g, '~')} />
     </DetailsItem>
   );
 };
-
-const BasicSelector: React.SFC<SpecCapabilityProps> = ({
-  capability,
-  description,
-  label,
-  obj,
-  fullPath,
-  value,
-}) => (
-  <DetailsItem description={description} label={label} obj={obj} path={fullPath}>
-    <Selector selector={value} kind={capability.split(SpecCapability.selector)[1]} />
-  </DetailsItem>
-);
 
 const BooleanSwitch: React.FC<SpecCapabilityProps> = ({
   model,
@@ -194,7 +150,7 @@ const BooleanSwitch: React.FC<SpecCapabilityProps> = ({
 
     if (_.has(obj, `spec.${descriptor.path}`)) {
       const patchFor = (val: boolean) => [
-        { op: 'add', path: `/spec/${descriptor.path.replace(/\./g, '/')}`, value: val },
+        { op: 'add', path: `/spec/${getPatchPathFromDescriptor(descriptor)}`, value: val },
       ];
       return k8sPatch(model, obj, patchFor(checked)).catch((err) => errorCb(err));
     }
@@ -250,7 +206,7 @@ const CheckboxUIComponent: React.FC<SpecCapabilityProps> = ({
   const [confirmed, setConfirmed] = React.useState(false);
 
   const patchFor = (val: boolean) => [
-    { op: 'add', path: `/spec/${descriptor.path.replace('.', '/')}`, value: val },
+    { op: 'add', path: `/spec/${getPatchPathFromDescriptor(descriptor)}`, value: val },
   ];
   const update = () => {
     setConfirmed(true);
@@ -344,72 +300,62 @@ const UpdateStrategy: React.FC<SpecCapabilityProps> = ({
   </DetailsItem>
 );
 
-const capabilityComponents = ImmutableMap<
-  SpecCapability,
-  React.ComponentType<SpecCapabilityProps>
->()
-  .set(SpecCapability.podCount, PodCount)
-  .set(SpecCapability.endpointList, Endpoints)
-  .set(SpecCapability.label, Label)
-  .set(SpecCapability.namespaceSelector, NamespaceSelector)
-  .set(SpecCapability.resourceRequirements, ResourceRequirements)
-  .set(SpecCapability.k8sResourcePrefix, K8sResourceLink)
-  .set(SpecCapability.selector, BasicSelector)
-  .set(SpecCapability.booleanSwitch, BooleanSwitch)
-  .set(SpecCapability.password, Secret)
-  .set(SpecCapability.updateStrategy, UpdateStrategy)
-  .set(SpecCapability.checkbox, CheckboxUIComponent)
-  .set(SpecCapability.hidden, null);
+export const SpecDescriptorDetailsItem: React.FC<SpecCapabilityProps> = (props) => {
+  const capability = (props.descriptor?.['x-descriptors'] ?? []).find(
+    (c) =>
+      !c.startsWith(SpecCapability.fieldGroup) &&
+      !c.startsWith(SpecCapability.arrayFieldGroup) &&
+      !c.startsWith(SpecCapability.advanced) &&
+      !c.startsWith(SpecCapability.fieldDependency),
+  ) as SpecCapability;
 
-const capabilityFor = (specCapability: SpecCapability) => {
-  if (_.isEmpty(specCapability)) {
-    return Default;
+  if (_.isEmpty(capability)) {
+    return <DefaultCapability {...props} />;
   }
-  if (specCapability.startsWith(SpecCapability.k8sResourcePrefix)) {
-    return capabilityComponents.get(SpecCapability.k8sResourcePrefix);
+
+  if (capability.startsWith(SpecCapability.k8sResourcePrefix)) {
+    return <K8sResourceLinkCapability capability={capability} {...props} />;
   }
-  if (specCapability.startsWith(SpecCapability.selector)) {
-    return capabilityComponents.get(SpecCapability.selector);
+
+  if (capability.startsWith(SpecCapability.selector)) {
+    return <BasicSelector capability={capability} {...props} />;
   }
-  return capabilityComponents.get(specCapability, Default);
+
+  switch (capability) {
+    case SpecCapability.podCount:
+      return <PodCount {...props} />;
+    case SpecCapability.endpointList:
+      return <Endpoints {...props} />;
+    case SpecCapability.label:
+      return <Label {...props} />;
+    case SpecCapability.namespaceSelector:
+      return <NamespaceSelector {...props} />;
+    case SpecCapability.resourceRequirements:
+      return <ResourceRequirements {...props} />;
+    case SpecCapability.booleanSwitch:
+      return <BooleanSwitch {...props} />;
+    case SpecCapability.password:
+      return <Secret {...props} />;
+    case SpecCapability.updateStrategy:
+      return <UpdateStrategy {...props} />;
+    case SpecCapability.checkbox:
+      return <CheckboxUIComponent {...props} />;
+    case SpecCapability.hidden:
+      return null;
+    default:
+      return <DefaultCapability {...props} />;
+  }
 };
 
-/**
- * Main entrypoint component for rendering custom UI for a given spec descriptor. This should be used instead of importing
- * individual components from this module.
- */
-export const SpecDescriptor = withFallback(
-  ({ model, obj, descriptor, schema, onError }: DescriptorProps) => {
-    const capability = (descriptor?.['x-descriptors'] ?? []).find(
-      (c) =>
-        !c.startsWith(SpecCapability.fieldGroup) &&
-        !c.startsWith(SpecCapability.arrayFieldGroup) &&
-        !c.startsWith(SpecCapability.advanced) &&
-        !c.startsWith(SpecCapability.fieldDependency),
-    ) as SpecCapability;
-    const CapabilityComponent = capabilityFor(capability);
-    const propertySchema = getSchemaAtPath(schema, descriptor.path);
-    const description = descriptor?.description || propertySchema?.description;
-    const label = descriptor?.displayName || propertySchema?.title;
-    const fullPath = ['spec', ..._.toPath(descriptor.path)];
-    const value = _.get(obj, fullPath, descriptor.value);
-
-    return CapabilityComponent ? (
-      <dl className="olm-descriptor">
-        <CapabilityComponent
-          capability={capability}
-          description={description}
-          descriptor={descriptor}
-          label={label}
-          model={model}
-          obj={obj}
-          onError={onError}
-          fullPath={fullPath}
-          value={value}
-        />
-      </dl>
-    ) : null;
-  },
-);
-
 type SpecCapabilityProps = CapabilityProps<SpecCapability>;
+PodCount.displayName = 'PodCount';
+Endpoints.displayName = 'Endpoints';
+Label.displayName = 'Label';
+NamespaceSelector.displayName = 'NamespaceSelector';
+ResourceRequirements.displayName = 'ResourceRequirements';
+BasicSelector.displayName = 'BasicSelector';
+BooleanSwitch.displayName = 'BooleanSwitch';
+CheckboxUIComponent.displayName = 'CheckboxUIComponent';
+Secret.displayName = 'Secret';
+UpdateStrategy.displayName = 'UpdateStrategy';
+SpecDescriptorDetailsItem.displayName = 'SpecDescriptorDetailsItem';

@@ -39,17 +39,35 @@ export const getSortedUpdates = (cv: ClusterVersionKind): ClusterUpdate[] => {
   }
 };
 
-export const getAvailableClusterChannels = () => ({
-  'stable-4.6': 'stable-4.6',
-  'fast-4.6': 'fast-4.6',
-  'candidate-4.6': 'candidate-4.6',
-});
+export const getAvailableClusterChannels = (cv) => {
+  // temporarily fall back to hard-coded values when `cv.status.desired.channels` are not present
+  // TODO: remove fall back values once `cv.status.desired.channels` are widespread
+  return cv?.status?.desired?.channels || ['stable-4.6', 'fast-4.6', 'candidate-4.6'];
+};
 
 export const getDesiredClusterVersion = (cv: ClusterVersionKind): string => {
   return _.get(cv, 'status.desired.version');
 };
 
 export const getClusterVersionChannel = (cv: ClusterVersionKind): string => cv?.spec?.channel;
+
+export const splitClusterVersionChannel = (channel: string) => {
+  const parsed = /^(.+)-(\d\.\d+)$/.exec(channel);
+  return parsed ? { prefix: parsed[1], version: parsed[2] } : null;
+};
+
+export const getSimilarClusterVersionChannels = (cv, currentPrefix) => {
+  return getAvailableClusterChannels(cv).filter((channel: string) => {
+    return currentPrefix && splitClusterVersionChannel(channel)?.prefix === currentPrefix;
+  });
+};
+
+export const getNewerClusterVersionChannel = (similarChannels, currentChannel) => {
+  return similarChannels.find(
+    // find the next minor version, which there should never be more than one
+    (channel) => semver.gt(semver.coerce(channel).version, semver.coerce(currentChannel).version),
+  );
+};
 
 export const getLastCompletedUpdate = (cv: ClusterVersionKind): string => {
   const history: UpdateHistory[] = _.get(cv, 'status.history', []);

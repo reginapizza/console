@@ -2,7 +2,12 @@ import * as React from 'react';
 import { match } from 'react-router';
 import * as classNames from 'classnames';
 import { sortable } from '@patternfly/react-table';
-import { referenceForModel, VolumeSnapshotKind } from '@console/internal/module/k8s';
+import {
+  K8sResourceKind,
+  PersistentVolumeClaimKind,
+  referenceForModel,
+  VolumeSnapshotKind,
+} from '@console/internal/module/k8s';
 import {
   ResourceLink,
   ResourceKebab,
@@ -25,8 +30,11 @@ import {
   VolumeSnapshotClassModel,
   VolumeSnapshotContentModel,
 } from '@console/internal/models';
-import { Status, getBadgeFromType, BadgeType } from '@console/shared';
+import { Status, getBadgeFromType, BadgeType, getName, getNamespace } from '@console/shared';
 import { snapshotStatusFilters, volumeSnapshotStatus } from '../../status';
+
+const { common, RestorePVC } = Kebab.factory;
+const menuActions = [RestorePVC, ...common];
 
 const tableColumnClasses = [
   '', // Name
@@ -40,64 +48,66 @@ const tableColumnClasses = [
   Kebab.columnClass,
 ];
 
-const Header = () => [
-  {
-    title: 'Name',
-    sortField: 'metadata.name',
-    transforms: [sortable],
-    props: { className: tableColumnClasses[0] },
-  },
-  {
-    title: 'Namespace',
-    sortField: 'metadata.namespace',
-    transforms: [sortable],
-    props: { className: tableColumnClasses[1] },
-  },
-  {
-    title: 'Status',
-    sortFunc: 'snapshotStatus',
-    transforms: [sortable],
-    props: { className: tableColumnClasses[2] },
-  },
-  {
-    title: 'Size',
-    sortFunc: 'volumeSnapshotSize',
-    transforms: [sortable],
-    props: { className: tableColumnClasses[3] },
-  },
-  {
-    title: 'PVC',
-    sortField: 'spec.source.persistentVolumeClaimName',
-    transforms: [sortable],
-    props: { className: tableColumnClasses[4] },
-  },
-  {
-    title: 'Snapshot Content',
-    sortField: 'status.boundVolumeSnapshotContentName',
-    transforms: [sortable],
-    props: { className: tableColumnClasses[5] },
-  },
-  {
-    title: 'Snapshot Class',
-    sortField: 'spec.volumeSnapshotClassName',
-    transforms: [sortable],
-    props: { className: tableColumnClasses[6] },
-  },
-  {
-    title: 'Created At',
-    sortField: 'metadata.creationTimeStamp',
-    transforms: [sortable],
-    props: { className: tableColumnClasses[7] },
-  },
-  {
-    title: '',
-    props: { className: tableColumnClasses[8] },
-  },
-];
+const Header = (disableItems = {}) => () =>
+  [
+    {
+      title: 'Name',
+      sortField: 'metadata.name',
+      transforms: [sortable],
+      props: { className: tableColumnClasses[0] },
+    },
+    {
+      title: 'Namespace',
+      sortField: 'metadata.namespace',
+      transforms: [sortable],
+      props: { className: tableColumnClasses[1] },
+      id: 'namespace',
+    },
+    {
+      title: 'Status',
+      sortFunc: 'snapshotStatus',
+      transforms: [sortable],
+      props: { className: tableColumnClasses[2] },
+    },
+    {
+      title: 'Size',
+      sortFunc: 'volumeSnapshotSize',
+      transforms: [sortable],
+      props: { className: tableColumnClasses[3] },
+    },
+    {
+      title: 'PVC',
+      sortField: 'spec.source.persistentVolumeClaimName',
+      transforms: [sortable],
+      props: { className: tableColumnClasses[4] },
+    },
+    {
+      title: 'Snapshot Content',
+      sortField: 'status.boundVolumeSnapshotContentName',
+      transforms: [sortable],
+      props: { className: tableColumnClasses[5] },
+    },
+    {
+      title: 'Snapshot Class',
+      sortField: 'spec.volumeSnapshotClassName',
+      transforms: [sortable],
+      props: { className: tableColumnClasses[6] },
+    },
+    {
+      title: 'Created At',
+      sortField: 'metadata.creationTimeStamp',
+      transforms: [sortable],
+      props: { className: tableColumnClasses[7] },
+    },
+    {
+      title: '',
+      props: { className: tableColumnClasses[8] },
+    },
+  ].filter((item) => !disableItems[item.title]);
 
-const Row: RowFunction<VolumeSnapshotKind> = ({ key, obj, style, index }) => {
+const Row: RowFunction<VolumeSnapshotKind> = ({ key, obj, style, index, customData }) => {
   const { name, namespace, creationTimestamp } = obj?.metadata || {};
-  const size = obj.status?.restoreSize;
+  const size = obj?.status?.restoreSize;
   const sizeBase = convertToBaseValue(size);
   const sizeMetrics = size ? humanizeBinaryBytes(sizeBase).string : '-';
   const pvcName = obj?.spec?.source?.persistentVolumeClaimName;
@@ -111,16 +121,22 @@ const Row: RowFunction<VolumeSnapshotKind> = ({ key, obj, style, index }) => {
           namespace={namespace}
         />
       </TableData>
-      <TableData className={tableColumnClasses[1]}>
+      <TableData className={tableColumnClasses[1]} columnID="namespace">
         <ResourceLink kind={NamespaceModel.kind} name={namespace} />
       </TableData>
       <TableData className={tableColumnClasses[2]}>
         <Status status={volumeSnapshotStatus(obj)} />
       </TableData>
       <TableData className={tableColumnClasses[3]}>{sizeMetrics}</TableData>
-      <TableData className={tableColumnClasses[4]}>
-        <ResourceLink kind={PersistentVolumeClaimModel.kind} name={pvcName} namespace={namespace} />
-      </TableData>
+      {!customData?.disableItems?.PVC && (
+        <TableData className={tableColumnClasses[4]}>
+          <ResourceLink
+            kind={PersistentVolumeClaimModel.kind}
+            name={pvcName}
+            namespace={namespace}
+          />
+        </TableData>
+      )}
       <TableData className={tableColumnClasses[5]}>
         {snapshotContent ? (
           <ResourceLink
@@ -144,7 +160,7 @@ const Row: RowFunction<VolumeSnapshotKind> = ({ key, obj, style, index }) => {
         <ResourceKebab
           kind={referenceForModel(VolumeSnapshotModel)}
           resource={obj}
-          actions={Kebab.factory.common}
+          actions={menuActions}
         />
       </TableData>
     </TableRow>
@@ -152,7 +168,7 @@ const Row: RowFunction<VolumeSnapshotKind> = ({ key, obj, style, index }) => {
 };
 
 const VolumeSnapshotTable: React.FC = (props) => (
-  <Table {...props} aria-label="Volume Snapshot Table" Header={Header} Row={Row} virtualize />
+  <Table {...props} aria-label="Volume Snapshot Table" Header={Header()} Row={Row} virtualize />
 );
 
 const VolumeSnapshotPage: React.FC<VolumeSnapshotPageProps> = (props) => {
@@ -175,9 +191,55 @@ const VolumeSnapshotPage: React.FC<VolumeSnapshotPageProps> = (props) => {
   );
 };
 
+const checkPVCSnapshot: CheckPVCSnapshot = (volumeSnapshots, pvc) =>
+  volumeSnapshots.filter(
+    (snapshot) =>
+      snapshot?.spec?.source?.persistentVolumeClaimName === getName(pvc) &&
+      getNamespace(snapshot) === getNamespace(pvc),
+  );
+
+const FilteredSnapshotTable: React.FC<FilteredSnapshotTable> = (props) => {
+  const { data, customData } = props;
+  return (
+    <Table
+      {...props}
+      data={checkPVCSnapshot(data, customData.pvc)}
+      aria-label="PVC Volume Snapshot Table"
+      Header={Header(customData?.disableItems)}
+      Row={Row}
+      virtualize
+    />
+  );
+};
+
+export const VolumeSnapshotPVCPage: React.FC<VolumeSnapshotPVCPage> = (props) => {
+  return (
+    <ListPage
+      {...props}
+      kind={referenceForModel(VolumeSnapshotModel)}
+      ListComponent={FilteredSnapshotTable}
+      rowFilters={snapshotStatusFilters}
+      customData={{ pvc: props.obj, disableItems: { PVC: true } }}
+    />
+  );
+};
 type VolumeSnapshotPageProps = {
   namespace?: string;
   match: match<{ ns?: string; plural?: string }>;
+};
+
+type CheckPVCSnapshot = (
+  volumeSnapshots: VolumeSnapshotKind[],
+  pvc: K8sResourceKind,
+) => VolumeSnapshotKind[];
+
+type FilteredSnapshotTable = {
+  data: VolumeSnapshotKind[];
+  customData: { [key: string]: any };
+};
+
+type VolumeSnapshotPVCPage = {
+  obj: PersistentVolumeClaimKind;
 };
 
 export default VolumeSnapshotPage;

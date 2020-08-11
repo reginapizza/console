@@ -1,10 +1,16 @@
 import * as React from 'react';
 import { Model } from '@patternfly/react-topology';
+import { Alerts, PrometheusRulesResponse } from '@console/internal/components/monitoring/types';
+import { useURLPoll } from '@console/internal/components/utils/url-poll-hook';
+import { getAlertsAndRules } from '@console/internal/components/monitoring/utils';
+import { PROMETHEUS_TENANCY_BASE_PATH } from '@console/internal/components/graphs';
 import { TopologyDataResources, TrafficData } from './topology-types';
 import ModelContext, { ExtensibleModel } from './data-transforms/ModelContext';
 import { baseDataModelGetter } from './data-transforms';
+import { getFilterById, useDisplayFilters, SHOW_GROUPS_FILTER_ID } from './filters';
 
 export interface RenderProps {
+  showGraphView: boolean;
   model?: Model;
   namespace: string;
   loaded: boolean;
@@ -12,6 +18,7 @@ export interface RenderProps {
 }
 
 export interface TopologyDataRendererProps {
+  showGraphView: boolean;
   kindsInFlight: boolean;
   resources: TopologyDataResources;
   render(props: RenderProps): React.ReactElement;
@@ -19,16 +26,35 @@ export interface TopologyDataRendererProps {
   trafficData?: TrafficData;
 }
 
+const POLL_DELAY = 15 * 1000;
+
 export const TopologyDataRenderer: React.FC<TopologyDataRendererProps> = ({
   render,
   resources,
-  namespace,
   kindsInFlight,
   trafficData,
+  namespace,
+  showGraphView,
 }) => {
   const dataModelContext = React.useContext<ExtensibleModel>(ModelContext);
   const [model, setModel] = React.useState<Model>(null);
   const [loadError, setLoadError] = React.useState<string>(null);
+  const filters = useDisplayFilters();
+  const showGroups = getFilterById(SHOW_GROUPS_FILTER_ID, filters)?.value ?? true;
+
+  const url = PROMETHEUS_TENANCY_BASE_PATH
+    ? `${PROMETHEUS_TENANCY_BASE_PATH}/api/v1/rules?namespace=${namespace}`
+    : null;
+  const [response, error, loading] = useURLPoll<PrometheusRulesResponse>(
+    url,
+    POLL_DELAY,
+    namespace,
+  );
+
+  const monitoringAlerts: Alerts = React.useMemo(() => {
+    const { alerts } = getAlertsAndRules(response?.data);
+    return { data: alerts, loaded: !loading, loadError: error };
+  }, [response, error, loading]);
 
   React.useEffect(() => {
     const { extensionsLoaded, watchedResources } = dataModelContext;
@@ -73,18 +99,20 @@ export const TopologyDataRenderer: React.FC<TopologyDataRendererProps> = ({
             dataModelContext.namespace,
             resources,
             workloadResources,
-            depicters,
+            showGroups ? depicters : [],
             trafficData,
+            monitoringAlerts,
           ),
         );
       })
       .catch(() => {});
-  }, [resources, trafficData, dataModelContext, kindsInFlight]);
+  }, [resources, trafficData, dataModelContext, kindsInFlight, monitoringAlerts, showGroups]);
 
   return render({
     loaded: !!model,
     loadError,
     namespace,
     model,
+    showGraphView,
   });
 };

@@ -33,6 +33,7 @@ import { openshiftHelpBase } from './utils/documentation';
 import { AboutModal } from './about-modal';
 import { clusterVersionReference, getReportBugLink } from '../module/k8s/cluster-settings';
 import * as redhatLogoImg from '../imgs/logos/redhat.svg';
+import { GuidedTourMastheadTrigger } from '@console/app/src/components/tour';
 
 const SystemStatusButton = ({ statuspageData, className }) =>
   !_.isEmpty(_.get(statuspageData, 'incidents')) ? (
@@ -80,22 +81,50 @@ class MastheadToolbarContents_ extends React.Component {
     this._onHelpDropdownToggle = this._onHelpDropdownToggle.bind(this);
     this._onAboutModal = this._onAboutModal.bind(this);
     this._closeAboutModal = this._closeAboutModal.bind(this);
+    this._resetInactivityTimeout = this._resetInactivityTimeout.bind(this);
+    this.userInactivityTimeout = null;
   }
 
   componentDidMount() {
     if (window.SERVER_FLAGS.statuspageID) {
       this._getStatuspageData(window.SERVER_FLAGS.statuspageID);
     }
+    // Ignore inactivity-timeout if set to less then 300 seconds
+    const inactivityTimeoutEnabled = window.SERVER_FLAGS.inactivityTimeout >= 300;
+    if (inactivityTimeoutEnabled) {
+      window.addEventListener('click', _.throttle(this._resetInactivityTimeout, 500));
+      window.addEventListener('keydown', _.throttle(this._resetInactivityTimeout, 500));
+      this._resetInactivityTimeout();
+    }
     this._updateUser();
   }
 
   componentDidUpdate(prevProps) {
+    const { flags, user } = this.props;
     if (
-      this.props.flags[FLAGS.OPENSHIFT] !== prevProps.flags[FLAGS.OPENSHIFT] ||
-      !_.isEqual(this.props.user, prevProps.user)
+      flags[FLAGS.OPENSHIFT] !== prevProps.flags[FLAGS.OPENSHIFT] ||
+      !_.isEqual(user, prevProps.user)
     ) {
       this._updateUser();
     }
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('click', this._resetInactivityTimeout);
+    window.removeEventListener('keydown', this._resetInactivityTimeout);
+    clearTimeout(this.userInactivityTimeout);
+  }
+
+  _resetInactivityTimeout() {
+    const { flags, user } = this.props;
+    clearTimeout(this.userInactivityTimeout);
+    this.userInactivityTimeout = setTimeout(() => {
+      if (flags[FLAGS.OPENSHIFT]) {
+        authSvc.logoutOpenShift(user?.metadata?.name === 'kube:admin');
+      } else {
+        authSvc.logout();
+      }
+    }, window.SERVER_FLAGS.inactivityTimeout * 1000);
   }
 
   _getStatuspageData(statuspageID) {
@@ -268,7 +297,7 @@ class MastheadToolbarContents_ extends React.Component {
       isSection: true,
       actions: [
         {
-          component: <Link to="/quickstart">Guided Tours</Link>,
+          component: <Link to="/quickstart">Quick Starts</Link>,
         },
         {
           label: 'Documentation',
@@ -282,6 +311,9 @@ class MastheadToolbarContents_ extends React.Component {
               },
             ]
           : []),
+        {
+          component: <GuidedTourMastheadTrigger />,
+        },
         ...(reportBugLink
           ? [
               {
@@ -551,6 +583,7 @@ class MastheadToolbarContents_ extends React.Component {
                 aria-label="Help menu"
                 className="co-app-launcher"
                 data-test="help-dropdown-toggle"
+                data-tour-id="tour-help-button"
                 onSelect={this._onHelpDropdownSelect}
                 onToggle={this._onHelpDropdownToggle}
                 isOpen={isHelpDropdownOpen}

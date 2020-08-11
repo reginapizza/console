@@ -12,7 +12,7 @@ import {
   knativeEventingResourcesBroker,
 } from '../../../utils/get-knative-resources';
 import { getDynamicChannelResourceList } from '../../../utils/fetch-dynamic-eventsources-utils';
-import { sourceSinkType } from '../import-types';
+import { sourceSinkType, SinkType } from '../import-types';
 
 interface SinkSectionProps {
   namespace: string;
@@ -20,10 +20,16 @@ interface SinkSectionProps {
 
 interface SinkResourcesProps {
   namespace: string;
+  isMoveSink?: boolean;
 }
 
 const SinkUri: React.FC = () => (
-  <>
+  <FormGroup
+    fieldId={getFieldId('sink-name', 'uri')}
+    helperText={`A Universal Resource Indicator where events are going to be delivered. Ex.
+    "http://cluster.example.com/svc"`}
+    isRequired
+  >
     <InputField
       type={TextInputTypes.text}
       name="sink.uri"
@@ -31,16 +37,12 @@ const SinkUri: React.FC = () => (
       data-test-id="sink-section-uri"
       required
     />
-    <div className="help-block">
-      A Universal Resource Indicator where events are going to be delivered. Ex.
-      &quot;http://cluster.example.com/svc&quot;
-    </div>
-  </>
+  </FormGroup>
 );
 
-const SinkResources: React.FC<SinkResourcesProps> = ({ namespace }) => {
+const SinkResources: React.FC<SinkResourcesProps> = ({ namespace, isMoveSink }) => {
   const [resourceAlert, setResourceAlert] = React.useState(false);
-  const { setFieldValue, setFieldTouched, validateForm, initialValues } = useFormikContext<
+  const { setFieldValue, setFieldTouched, validateForm, initialValues, touched } = useFormikContext<
     FormikValues
   >();
   const autocompleteFilter = (strText, item): boolean => fuzzy(strText, item?.props?.name);
@@ -61,15 +63,24 @@ const SinkResources: React.FC<SinkResourcesProps> = ({ namespace }) => {
     },
     [setFieldValue, setFieldTouched, validateForm],
   );
-  const contextAvailable = !!initialValues.sink.name;
+  const contextAvailable = isMoveSink ? false : !!initialValues.sink.name;
   const resourcesData = [
     ...knativeServingResourcesServices(namespace),
     ...getDynamicChannelResourceList(namespace),
     ...knativeEventingResourcesBroker(namespace),
   ];
 
-  const handleOnLoad = (resourceList: { [key: string]: string }) =>
-    _.isEmpty(resourceList) ? setResourceAlert(true) : setResourceAlert(false);
+  const handleOnLoad = (resourceList: { [key: string]: string }) => {
+    if (_.isEmpty(resourceList)) {
+      setResourceAlert(true);
+      if (!touched.sinkType) {
+        setFieldValue('sinkType', SinkType.Uri);
+        setFieldTouched('sinkType', true);
+      }
+    } else {
+      setResourceAlert(false);
+    }
+  };
 
   // filter out channels backing brokers
   const resourceFilter = (resource: K8sResourceKind) => {
@@ -111,6 +122,24 @@ const SinkResources: React.FC<SinkResourcesProps> = ({ namespace }) => {
   );
 };
 
+export const SinkUriResourcesGroup: React.FC<SinkResourcesProps> = ({ namespace, isMoveSink }) => (
+  <RadioGroupField
+    name="sinkType"
+    options={[
+      {
+        label: sourceSinkType.Resource.label,
+        value: sourceSinkType.Resource.value,
+        activeChildren: <SinkResources namespace={namespace} isMoveSink={isMoveSink} />,
+      },
+      {
+        label: sourceSinkType.Uri.label,
+        value: sourceSinkType.Uri.value,
+        activeChildren: <SinkUri />,
+      },
+    ]}
+  />
+);
+
 const SinkSection: React.FC<SinkSectionProps> = ({ namespace }) => {
   return (
     <FormSection
@@ -118,21 +147,7 @@ const SinkSection: React.FC<SinkSectionProps> = ({ namespace }) => {
       subTitle="Add a Sink to route this Event Source to a Channel, Broker, Knative Service or another route."
       extraMargin
     >
-      <RadioGroupField
-        name="sinkType"
-        options={[
-          {
-            label: sourceSinkType.Resource.label,
-            value: sourceSinkType.Resource.value,
-            activeChildren: <SinkResources namespace={namespace} />,
-          },
-          {
-            label: sourceSinkType.Uri.label,
-            value: sourceSinkType.Uri.value,
-            activeChildren: <SinkUri />,
-          },
-        ]}
-      />
+      <SinkUriResourcesGroup namespace={namespace} />
     </FormSection>
   );
 };

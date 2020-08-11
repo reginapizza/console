@@ -2,7 +2,7 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import * as classNames from 'classnames';
 import * as _ from 'lodash';
-import { Model, Edge } from '@patternfly/react-topology';
+import { Edge, isNode, Node } from '@patternfly/react-topology';
 import { RootState } from '@console/internal/redux';
 import { referenceFor, K8sResourceKind } from '@console/internal/module/k8s';
 import {
@@ -13,7 +13,7 @@ import {
 } from '@console/internal/components/utils';
 import { TYPE_CONNECTS_TO, TYPE_SERVICE_BINDING, TYPE_TRAFFIC_CONNECTOR } from './components/const';
 import { edgeActions } from './actions/edgeActions';
-import { getKialiLink, getResource } from './topology-utils';
+import { getNamespaceDashboardKialiLink, getResource } from './topology-utils';
 
 type StateProps = {
   consoleLinks?: K8sResourceKind[];
@@ -21,7 +21,6 @@ type StateProps = {
 
 export type TopologyEdgePanelProps = {
   edge: Edge;
-  model: Model;
 } & StateProps;
 
 const connectorTypeToTitle = (type: string): string => {
@@ -37,11 +36,14 @@ const connectorTypeToTitle = (type: string): string => {
   }
 };
 
-const TopologyEdgePanel: React.FC<TopologyEdgePanelProps> = ({ edge, model, consoleLinks }) => {
+const TopologyEdgePanel: React.FC<TopologyEdgePanelProps> = ({ edge, consoleLinks }) => {
   const source = getResource(edge.getSource());
   const target = getResource(edge.getTarget());
   const resources = [source, target];
-  const nodes = model.nodes.map((n) => edge.getController().getNodeById(n.id));
+  const nodes = edge
+    .getController()
+    .getElements()
+    .filter((e) => isNode(e) && !e.isGroup()) as Node[];
   const {
     metadata: { namespace },
   } = resources[1];
@@ -91,7 +93,10 @@ const TopologyEdgePanel: React.FC<TopologyEdgePanelProps> = ({ edge, model, cons
         {edge.getType() === TYPE_TRAFFIC_CONNECTOR && (
           <>
             <SidebarSectionHeading text="Kiali Link" />
-            <ExternalLink href={getKialiLink(consoleLinks, namespace)} text="Kiali Graph View" />
+            <ExternalLink
+              href={getNamespaceDashboardKialiLink(consoleLinks, namespace)}
+              text="Kiali Graph View"
+            />
           </>
         )}
       </div>

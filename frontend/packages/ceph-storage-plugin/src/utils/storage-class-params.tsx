@@ -1,5 +1,5 @@
 import { ExtensionSCProvisionerProp } from '@console/plugin-sdk';
-import { PoolResourceComponent } from '../components/ocs-storage-class-form';
+import { PoolResourceComponent } from '../components/ocs-storage-class-form/ocs-storage-class-form';
 import { CEPH_STORAGE_NAMESPACE } from '../constants';
 
 export const StorageClassFormProvisoners: ExtensionSCProvisionerProp = Object.freeze({
@@ -7,6 +7,7 @@ export const StorageClassFormProvisoners: ExtensionSCProvisionerProp = Object.fr
     'openshift-storage.rbd.csi.ceph.com': {
       title: 'Ceph RBD',
       provisioner: 'rbd.csi.ceph.com',
+      allowVolumeExpansion: true,
       parameters: {
         clusterID: {
           name: 'Cluster ID',
@@ -62,11 +63,24 @@ export const StorageClassFormProvisoners: ExtensionSCProvisionerProp = Object.fr
           value: 'ext4',
           visible: () => false,
         },
+        'csi.storage.k8s.io/controller-expand-secret-name': {
+          name: 'Expand Secret Name',
+          hintText: 'The namespace where provisioner secret is created',
+          value: 'rook-csi-rbd-provisioner',
+          visible: () => false,
+        },
+        'csi.storage.k8s.io/controller-expand-secret-namespace': {
+          name: 'Expand Secret Namespace',
+          hintText: 'The namespace where provisioner secret is created',
+          value: CEPH_STORAGE_NAMESPACE,
+          visible: () => false,
+        },
       },
     },
     'openshift-storage.cephfs.csi.ceph.com': {
       title: 'Ceph FS',
       provisioner: 'cephfs.csi.ceph.com',
+      allowVolumeExpansion: true,
       parameters: {
         clusterID: {
           name: 'Cluster ID',
@@ -99,6 +113,18 @@ export const StorageClassFormProvisoners: ExtensionSCProvisionerProp = Object.fr
         },
         'csi.storage.k8s.io/node-stage-secret-namespace': {
           name: 'Node Stage Secret Namespace',
+          hintText: 'The namespace where provisioner secret is created',
+          value: CEPH_STORAGE_NAMESPACE,
+          visible: () => false,
+        },
+        'csi.storage.k8s.io/controller-expand-secret-name': {
+          name: 'Expand Secret Name',
+          hintText: 'The namespace where provisioner secret is created',
+          value: 'rook-csi-cephfs-provisioner',
+          visible: () => false,
+        },
+        'csi.storage.k8s.io/controller-expand-secret-namespace': {
+          name: 'Expand Secret Namespace',
           hintText: 'The namespace where provisioner secret is created',
           value: CEPH_STORAGE_NAMESPACE,
           visible: () => false,

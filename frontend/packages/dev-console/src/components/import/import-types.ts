@@ -72,6 +72,7 @@ export interface DeployImageFormData {
   };
   isi: ImageStreamImageData;
   image: ImageStreamImageData;
+  runtimeIcon?: string;
   isSearchingForImage: boolean;
   resources: Resources;
   resourceTypesNotValid?: Resources[];
@@ -96,6 +97,7 @@ export interface GitImportFormData {
   serverless?: ServerlessData;
   pipeline?: PipelineData;
   image: ImageData;
+  runtimeIcon?: string;
   route: RouteData;
   resources: Resources;
   resourceTypesNotValid?: Resources[];
@@ -110,6 +112,7 @@ export interface ApplicationData {
   initial?: string;
   name: string;
   selectedKey: string;
+  isInContext?: boolean;
 }
 
 export interface ImageData {

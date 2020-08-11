@@ -1,9 +1,15 @@
 import * as React from 'react';
-import { shallow } from 'enzyme';
-import { SelectOption } from '@patternfly/react-core';
+import { mount, shallow } from 'enzyme';
+import { SelectOption, Switch } from '@patternfly/react-core';
 import FilterDropdown from '../FilterDropdown';
 import { DisplayFilters } from '../../topology-types';
-import { DEFAULT_TOPOLOGY_FILTERS } from '../const';
+import {
+  DEFAULT_TOPOLOGY_FILTERS,
+  EXPAND_APPLICATION_GROUPS_FILTER_ID,
+  EXPAND_GROUPS_FILTER_ID,
+  SHOW_GROUPS_FILTER_ID,
+} from '../const';
+import { getFilterById } from '../filter-utils';
 
 describe(FilterDropdown.displayName, () => {
   let dropdownFilter: DisplayFilters;
@@ -25,24 +31,82 @@ describe(FilterDropdown.displayName, () => {
   });
 
   it('should have the correct number of filters', () => {
-    const wrapper = shallow(
+    const wrapper = mount(
       <FilterDropdown
         filters={dropdownFilter}
         supportedFilters={dropdownFilter.map((f) => f.id)}
         onChange={onChange}
+        opened
       />,
     );
-    expect(wrapper.find(SelectOption)).toHaveLength(Object.keys(DEFAULT_TOPOLOGY_FILTERS).length);
+    expect(wrapper.find(SelectOption)).toHaveLength(
+      Object.keys(DEFAULT_TOPOLOGY_FILTERS).length - 1,
+    );
   });
 
   it('should hide unsupported filters', () => {
-    const wrapper = shallow(
+    const wrapper = mount(
       <FilterDropdown
         filters={dropdownFilter}
-        supportedFilters={[dropdownFilter[0].id]}
+        supportedFilters={[EXPAND_APPLICATION_GROUPS_FILTER_ID]}
         onChange={onChange}
+        opened
       />,
     );
     expect(wrapper.find(SelectOption)).toHaveLength(1);
+  });
+
+  it('should contain the show groups and expand groups switches', () => {
+    const wrapper = mount(
+      <FilterDropdown
+        filters={dropdownFilter}
+        supportedFilters={dropdownFilter.map((f) => f.id)}
+        onChange={onChange}
+        opened
+      />,
+    );
+    expect(wrapper.find(Switch)).toHaveLength(2);
+  });
+
+  it('should disable individual group expand when expand groups is false', () => {
+    getFilterById(EXPAND_GROUPS_FILTER_ID, dropdownFilter).value = false;
+    const wrapper = mount(
+      <FilterDropdown
+        filters={dropdownFilter}
+        supportedFilters={dropdownFilter.map((f) => f.id)}
+        onChange={onChange}
+        opened
+      />,
+    );
+    expect(
+      wrapper
+        .find(SelectOption)
+        .first()
+        .props().isDisabled,
+    ).toBeTruthy();
+  });
+
+  it('should disable expand groups and individual group expands when show groups is false', () => {
+    getFilterById(SHOW_GROUPS_FILTER_ID, dropdownFilter).value = false;
+    const wrapper = mount(
+      <FilterDropdown
+        filters={dropdownFilter}
+        supportedFilters={dropdownFilter.map((f) => f.id)}
+        onChange={onChange}
+        opened
+      />,
+    );
+    expect(
+      wrapper
+        .find(Switch)
+        .at(1)
+        .props().isDisabled,
+    ).toBeTruthy();
+    expect(
+      wrapper
+        .find(SelectOption)
+        .first()
+        .props().isDisabled,
+    ).toBeTruthy();
   });
 });

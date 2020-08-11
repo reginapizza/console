@@ -24,6 +24,8 @@ export const TEMPLATE_OS_NAME_ANNOTATION = 'name.os.template.kubevirt.io';
 export const TEMPLATE_DATAVOLUME_ANNOTATION = 'datavolume.template.kubevirt.io';
 export const TEMPLATE_VM_DOMAIN_LABEL = 'kubevirt.io/domain';
 export const TEMPLATE_VM_SIZE_LABEL = 'kubevirt.io/size';
+export const TEMPLATE_VM_GOLDEN_OS_NAMESPACE = 'openshift-cnv-base-images';
+export const TEMPLATE_VM_COMMON_NAMESPACE = 'openshift';
 
 export const LABEL_USED_TEMPLATE_NAME = 'vm.kubevirt.io/template';
 export const LABEL_USED_TEMPLATE_NAMESPACE = 'vm.kubevirt.io/template.namespace';
@@ -49,3 +51,12 @@ export enum DeviceType {
 export const VM_DETAIL_EVENTS_HREF = 'events';
 
 export const DUMMY_VM_NAME = 'vm';
+
+export const WINTOOLS_CONTAINER_NAMES = {
+  openshift: 'registry.redhat.io/container-native-virtualization/virtio-win',
+  ocp: 'registry.redhat.io/container-native-virtualization/virtio-win',
+  online: 'registry.redhat.io/container-native-virtualization/virtio-win',
+  dedicated: 'registry.redhat.io/container-native-virtualization/virtio-win',
+  azure: 'registry.redhat.io/container-native-virtualization/virtio-win',
+  okd: 'kubevirt/virtio-container-disk',
+};

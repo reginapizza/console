@@ -35,14 +35,16 @@ const renderableFieldOrder: { [key in RenderableField]: number } = {
   [VMSettingsField.DESCRIPTION]: 19,
   [VMSettingsField.USER_TEMPLATE]: 20,
   [VMSettingsField.OPERATING_SYSTEM]: 21,
-  [VMSettingsField.FLAVOR]: 22,
-  [VMSettingsField.MEMORY]: 23,
-  [VMSettingsField.CPU]: 24,
-  [VMSettingsField.WORKLOAD_PROFILE]: 25,
-  [VMSettingsField.PROVISION_SOURCE_TYPE]: 26,
-  [VMSettingsField.CONTAINER_IMAGE]: 27,
-  [VMSettingsField.IMAGE_URL]: 28,
-  [VMSettingsField.START_VM]: 29,
+  [VMSettingsField.CLONE_COMMON_BASE_DISK_IMAGE]: 22,
+  [VMSettingsField.MOUNT_WINDOWS_GUEST_TOOLS]: 23,
+  [VMSettingsField.FLAVOR]: 24,
+  [VMSettingsField.MEMORY]: 25,
+  [VMSettingsField.CPU]: 26,
+  [VMSettingsField.WORKLOAD_PROFILE]: 27,
+  [VMSettingsField.PROVISION_SOURCE_TYPE]: 28,
+  [VMSettingsField.CONTAINER_IMAGE]: 29,
+  [VMSettingsField.IMAGE_URL]: 30,
+  [VMSettingsField.START_VM]: 31,
 };
 
 const idResolver: RenderableFieldResolver = {
@@ -67,14 +69,16 @@ const idResolver: RenderableFieldResolver = {
   [VMSettingsField.DESCRIPTION]: 'vm-description',
   [VMSettingsField.USER_TEMPLATE]: 'template-dropdown',
   [VMSettingsField.OPERATING_SYSTEM]: 'operating-system-dropdown',
+  [VMSettingsField.CLONE_COMMON_BASE_DISK_IMAGE]: 'clone-common-base-image-checkbox',
+  [VMSettingsField.MOUNT_WINDOWS_GUEST_TOOLS]: 'mount-windows-guest-tools-checkbox',
   [VMSettingsField.FLAVOR]: 'flavor-dropdown',
   [VMSettingsField.MEMORY]: 'resources-memory',
   [VMSettingsField.CPU]: 'resources-cpu',
   [VMSettingsField.WORKLOAD_PROFILE]: 'workload-profile-dropdown',
-  [VMSettingsField.START_VM]: 'start-vm',
   [VMSettingsField.PROVISION_SOURCE_TYPE]: 'image-source-type-dropdown',
   [VMSettingsField.CONTAINER_IMAGE]: 'provision-source-container',
   [VMSettingsField.IMAGE_URL]: 'provision-source-url',
+  [VMSettingsField.START_VM]: 'start-vm',
 };
 
 export const getFieldId = (key: RenderableField) => idResolver[key];

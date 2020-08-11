@@ -1,8 +1,8 @@
 import * as React from 'react';
 import * as classNames from 'classnames';
 import * as _ from 'lodash';
-import { Model, Edge } from '@patternfly/react-topology';
-import { referenceFor } from '@console/internal/module/k8s';
+import { Edge, Node, isNode } from '@patternfly/react-topology';
+import { referenceFor, modelFor } from '@console/internal/module/k8s';
 import {
   ActionsMenu,
   ResourceLink,
@@ -11,12 +11,11 @@ import {
 } from '@console/internal/components/utils';
 import { edgeActions } from '@console/dev-console/src/components/topology/actions/edgeActions';
 import { TopologyDataObject } from '@console/dev-console/src/components/topology/topology-types';
-import { NodeType } from '../../topology/knative-topology-utils';
 import { TYPE_EVENT_SOURCE_LINK, TYPE_REVISION_TRAFFIC } from '../../topology/const';
+import { setSinkSource } from '../../actions/sink-source';
 
 export type TopologyEdgePanelProps = {
   edge: Edge;
-  model: Model;
 };
 
 const connectorTypeToTitle = (type: string): string => {
@@ -30,12 +29,20 @@ const connectorTypeToTitle = (type: string): string => {
   }
 };
 
-const KnativeTopologyEdgePanel: React.FC<TopologyEdgePanelProps> = ({ edge, model }) => {
+const KnativeTopologyEdgePanel: React.FC<TopologyEdgePanelProps> = ({ edge }) => {
   const source: TopologyDataObject = edge.getSource().getData();
   const target: TopologyDataObject = edge.getTarget().getData();
   const resources = [source?.resources?.obj, target?.resources?.obj];
-  const nodes = model.nodes.map((n) => edge.getController().getNodeById(n.id));
-  const isConnectedToUri = NodeType.SinkUri === resources[1]?.type?.nodeType;
+  const nodes = edge
+    .getController()
+    .getElements()
+    .filter((e) => isNode(e) && !e.isGroup()) as Node[];
+  const isEventSourceConnector = edge.getType() === TYPE_EVENT_SOURCE_LINK;
+  const actions = [];
+  if (isEventSourceConnector && source.resource) {
+    const sourceModel = modelFor(referenceFor(source.resource));
+    actions.push(setSinkSource(sourceModel, source.resource));
+  }
 
   return (
     <div className="overview__sidebar-pane resource-overview">
@@ -45,7 +52,7 @@ const KnativeTopologyEdgePanel: React.FC<TopologyEdgePanelProps> = ({ edge, mode
             {connectorTypeToTitle(edge.getType())}
           </div>
           <div className="co-actions">
-            <ActionsMenu actions={!isConnectedToUri ? edgeActions(edge, nodes) : []} />
+            <ActionsMenu actions={!isEventSourceConnector ? edgeActions(edge, nodes) : actions} />
           </div>
         </h1>
       </div>

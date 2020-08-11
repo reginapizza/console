@@ -5,8 +5,11 @@ import { Tooltip } from '@patternfly/react-core';
 import { k8sPatch, Patch, DeploymentUpdateStrategy, K8sResourceKind } from '../../module/k8s';
 import { DeploymentModel } from '../../models';
 import { createModalLauncher, ModalTitle, ModalBody, ModalSubmitFooter } from '../factory/modal';
-import { pluralize, withHandlePromise } from '../utils';
+import { pluralize, withHandlePromise, HandlePromiseProps } from '../utils';
 import { RadioInput } from '../radio';
+
+export const UPDATE_STRATEGY_DESCRIPTION =
+  'How should the pods be replaced when a new revision is created?';
 
 export const getNumberOrPercent = (value) => {
   if (typeof value === 'undefined') {
@@ -20,12 +23,14 @@ export const getNumberOrPercent = (value) => {
 };
 
 export const ConfigureUpdateStrategy: React.FC<ConfigureUpdateStrategyProps> = (props) => {
+  const { showDescription = true } = props;
   return (
     <>
-      <div className="co-m-form-row">
-        <p>How should the pods be replaced when a new revision is created?</p>
-      </div>
-
+      {showDescription && (
+        <div className="co-m-form-row">
+          <p>{UPDATE_STRATEGY_DESCRIPTION}</p>
+        </div>
+      )}
       <div className="row co-m-form-row">
         <div className="col-sm-12">
           <RadioInput
@@ -156,15 +161,11 @@ export const ConfigureUpdateStrategyModal = withHandlePromise(
         };
         patch.op = 'add';
       }
-
-      props
-        .handlePromise(
-          k8sPatch(DeploymentModel, props.deployment, [
-            patch,
-            { path: '/spec/strategy/type', value: strategyType, op: 'replace' },
-          ]),
-        )
-        .then(props.close, () => {});
+      const promise = k8sPatch(DeploymentModel, props.deployment, [
+        patch,
+        { path: '/spec/strategy/type', value: strategyType, op: 'replace' },
+      ]);
+      props.handlePromise(promise, props.close);
     };
 
     return (
@@ -194,6 +195,7 @@ export const ConfigureUpdateStrategyModal = withHandlePromise(
 export const configureUpdateStrategyModal = createModalLauncher(ConfigureUpdateStrategyModal);
 
 export type ConfigureUpdateStrategyProps = {
+  showDescription?: boolean;
   strategyType: DeploymentUpdateStrategy['type'];
   maxUnavailable: number | string;
   maxSurge: number | string;
@@ -211,6 +213,6 @@ export type ConfigureUpdateStrategyModalProps = {
   errorMessage: string;
   cancel?: () => void;
   close?: () => void;
-};
+} & HandlePromiseProps;
 
 ConfigureUpdateStrategy.displayName = 'ConfigureUpdateStrategy';

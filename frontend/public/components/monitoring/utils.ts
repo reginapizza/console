@@ -71,17 +71,18 @@ export const getAlertsAndRules = (
 export const alertsToProps = ({ UI }, perspective?: string) =>
   UI.getIn(['monitoring', perspective === 'dev' ? 'devAlerts' : 'alerts']) || {};
 
-export const rulesToProps = (state: RootState) => {
-  const data = state.UI.getIn(['monitoring', 'rules']);
-  const { loaded, loadError }: Alerts = alertsToProps(state);
+export const rulesToProps = (state: RootState, perspective?: string) => {
+  const data = state.UI.getIn(['monitoring', perspective === 'dev' ? 'devRules' : 'rules']);
+  const { loaded, loadError }: Alerts = alertsToProps(state, perspective);
   return { data, loaded, loadError };
 };
 
 export const silencesToProps = ({ UI }) => UI.getIn(['monitoring', 'silences']) || {};
 
 export const silenceParamToProps = (state: RootState, { match }) => {
+  const namespace = match.params?.ns;
   const { data: silences, loaded, loadError }: Silences = silencesToProps(state);
   const { loaded: alertsLoaded }: Alerts = alertsToProps(state);
   const silence = _.find(silences, { id: _.get(match, 'params.id') });
-  return { alertsLoaded, loaded, loadError, silence, silences };
+  return { alertsLoaded, loaded, loadError, namespace, silence, silences };
 };

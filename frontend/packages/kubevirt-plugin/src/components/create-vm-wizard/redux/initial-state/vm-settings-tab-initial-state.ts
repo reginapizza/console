@@ -13,6 +13,10 @@ export const getInitialVmSettings = (data: CommonData): VMSettings => {
   const hiddenByProviderOrTemplate = isProviderImport
     ? hiddenByProvider
     : asHidden(isCreateTemplate, VMWizardProps.isCreateTemplate);
+  const hiddenByProviderOrCloneCommonBaseDiskImage = isProviderImport
+    ? hiddenByProvider
+    : asHidden(false);
+  const hiddenByOperatingSystem = asHidden(true, VMSettingsField.OPERATING_SYSTEM);
 
   const isVM = !isCreateTemplate && !isProviderImport;
 
@@ -31,6 +35,14 @@ export const getInitialVmSettings = (data: CommonData): VMSettings => {
     [VMSettingsField.OPERATING_SYSTEM]: {
       isRequired: asRequired(true),
     },
+    [VMSettingsField.CLONE_COMMON_BASE_DISK_IMAGE]: {
+      value: false,
+      isHidden: hiddenByOperatingSystem,
+    },
+    [VMSettingsField.MOUNT_WINDOWS_GUEST_TOOLS]: {
+      value: false,
+      isHidden: asHidden(true, VMSettingsField.OPERATING_SYSTEM),
+    },
     [VMSettingsField.FLAVOR]: {
       isRequired: asRequired(true),
     },
@@ -42,7 +54,7 @@ export const getInitialVmSettings = (data: CommonData): VMSettings => {
       isRequired: asRequired(true),
     },
     [VMSettingsField.PROVISION_SOURCE_TYPE]: {
-      isHidden: hiddenByProvider,
+      isHidden: hiddenByProviderOrCloneCommonBaseDiskImage,
       isRequired: asRequired(!isProviderImport),
       sources: OrderedSet(
         [
@@ -54,12 +66,10 @@ export const getInitialVmSettings = (data: CommonData): VMSettings => {
       ),
     },
     [VMSettingsField.CONTAINER_IMAGE]: {
-      isHidden: hiddenByProvider,
-      skipValidation: true, // validated in storage tab
+      isHidden: hiddenByProviderOrCloneCommonBaseDiskImage,
     },
     [VMSettingsField.IMAGE_URL]: {
-      isHidden: hiddenByProvider,
-      skipValidation: true, // validated in storage tab
+      isHidden: hiddenByProviderOrCloneCommonBaseDiskImage,
     },
     [VMSettingsField.START_VM]: {
       value: false,

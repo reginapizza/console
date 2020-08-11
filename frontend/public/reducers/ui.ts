@@ -9,13 +9,14 @@ import {
   NAMESPACE_LOCAL_STORAGE_KEY,
   LAST_PERSPECTIVE_LOCAL_STORAGE_KEY,
   PINNED_RESOURCES_LOCAL_STORAGE_KEY,
+  COLUMN_MANAGEMENT_LOCAL_STORAGE_KEY,
 } from '@console/shared/src/constants';
-import { AlertStates, isSilenced, SilenceStates } from '../reducers/monitoring';
+import { isSilenced } from '../reducers/monitoring';
 import { legalNamePattern, getNamespace } from '../components/utils/link';
 import { OverviewSpecialGroup } from '../components/overview/constants';
 import { RootState } from '../redux';
 import { pluginStore } from '../plugins';
-import { Alert } from '../components/monitoring/types';
+import { Alert, AlertStates, RuleStates, SilenceStates } from '../components/monitoring/types';
 import { isPerspective } from '@console/plugin-sdk';
 
 export type UIState = ImmutableMap<string, any>;
@@ -40,7 +41,7 @@ const newQueryBrowserQuery = (): ImmutableMap<string, any> =>
     isExpanded: true,
   });
 
-const silenceFiringAlerts = (firingAlerts, silences) => {
+export const silenceFiringAlerts = (firingAlerts, silences) => {
   // For each firing alert, store a list of the Silences that are silencing it and set its state to show it is silenced
   _.each(firingAlerts, (a) => {
     a.silencedBy = _.filter(
@@ -55,6 +56,13 @@ const silenceFiringAlerts = (firingAlerts, silences) => {
           ruleAlert.state = AlertStates.Silenced;
         }
       });
+      if (!_.isEmpty(a.rule.alerts) && _.every(a.rule.alerts, isSilenced)) {
+        a.rule.state = RuleStates.Silenced;
+        a.rule.silencedBy = _.filter(
+          silences?.data,
+          (s) => s.status.state === SilenceStates.Active && _.some(a.rule.alerts, isSilenced),
+        );
+      }
     }
   });
 };
@@ -78,6 +86,15 @@ export default (state: UIState, action: UIAction): UIState => {
 
     const storedPins = localStorage.getItem(PINNED_RESOURCES_LOCAL_STORAGE_KEY);
     const pinnedResources = storedPins ? JSON.parse(storedPins) : {};
+    let storedTableColumns = {};
+    try {
+      storedTableColumns =
+        JSON.parse(localStorage.getItem(COLUMN_MANAGEMENT_LOCAL_STORAGE_KEY)) || {};
+    } catch (e) {
+      // Error parsing the data, do not store the current filters
+      /* eslint-disable-next-line no-console */
+      console.error('Error parsing column filters from local storage', e);
+    }
 
     return ImmutableMap({
       activeNavSectionId: 'workloads',
@@ -107,11 +124,16 @@ export default (state: UIState, action: UIAction): UIState => {
         pollInterval: null,
         queries: ImmutableList([newQueryBrowserQuery()]),
       }),
+      columnManagement: ImmutableMap(storedTableColumns),
       pinnedResources,
     });
   }
 
   switch (action.type) {
+    case ActionType.SetTableColumns:
+      // use groupVersionKind to uniquely identify the
+      return state.setIn(['columnManagement', action.payload.id], action.payload.selectedColumns);
+
     case ActionType.SetActiveApplication:
       return state.set('activeApplication', action.payload.application);
 
@@ -219,7 +241,6 @@ export default (state: UIState, action: UIAction): UIState => {
       const firingAlerts = _.filter(alerts?.data, isAlertFiring);
       silenceFiringAlerts(firingAlerts, silences);
       silenceFiringAlerts(_.filter(notificationAlerts?.data, isAlertFiring), silences);
-      // filter out silenced alerts from notificationAlerts
       notificationAlerts.data = _.reject(notificationAlerts.data, { state: AlertStates.Silenced });
       state = state.setIn(['monitoring', alertKey], alerts);
       state = state.setIn(['monitoring', 'notificationAlerts'], notificationAlerts);

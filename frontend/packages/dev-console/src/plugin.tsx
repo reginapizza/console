@@ -25,6 +25,7 @@ import {
   YAMLTemplate,
   OverviewTabSection,
   ReduxReducer,
+  GuidedTour,
 } from '@console/plugin-sdk';
 import { NamespaceRedirect } from '@console/internal/components/utils/namespace-redirect';
 import { FLAGS } from '@console/shared/src/constants';
@@ -70,6 +71,7 @@ import {
   operatorsTopologyPlugin,
 } from './components/topology/operators/operatorsTopologyPlugin';
 import { usePerspectiveDetection } from './utils/usePerspectiveDetection';
+import { getGuidedTour } from './components/guided-tour';
 
 const {
   ClusterTaskModel,
@@ -101,6 +103,7 @@ type ConsumedExtensions =
   | YAMLTemplate
   | OverviewTabSection
   | AddAction
+  | GuidedTour
   | HelmTopologyConsumedExtensions
   | OperatorsTopologyConsumedExtensions;
 
@@ -183,6 +186,7 @@ const plugin: Plugin<ConsumedExtensions> = [
         name: 'Monitoring',
         href: '/dev-monitoring',
         testID: 'monitoring-header',
+        'data-tour-id': 'tour-monitoring-nav',
       },
     },
     flags: {
@@ -198,6 +202,7 @@ const plugin: Plugin<ConsumedExtensions> = [
         name: 'Search',
         href: '/search',
         testID: 'search-header',
+        'data-tour-id': 'tour-search-nav',
       },
     },
   },
@@ -509,7 +514,20 @@ const plugin: Plugin<ConsumedExtensions> = [
       loader: async () =>
         (
           await import(
-            './components/gitops/GitOpsDashboard' /* webpackChunkName: "dev-console-gitops" */
+            './components/gitops/GitOpsListPage' /* webpackChunkName: "dev-console-gitops" */
+          )
+        ).default,
+    },
+  },
+  {
+    type: 'Page/Route',
+    properties: {
+      exact: true,
+      path: '/gitops/application/:appName',
+      loader: async () =>
+        (
+          await import(
+            './components/gitops/GitOpsDetailsPage' /* webpackChunkName: "dev-console-gitops" */
           )
         ).default,
     },
@@ -792,7 +810,20 @@ const plugin: Plugin<ConsumedExtensions> = [
       loader: async () =>
         (
           await import(
-            './components/monitoring/alerts/MonitoringAlertsDetailsPage' /* webpackChunkName: "dev-console-monitoring-alerts" */
+            './components/monitoring/alerts/MonitoringAlertsRulesDetailsPage' /* webpackChunkName: "dev-console-monitoring-alerts" */
+          )
+        ).default,
+    },
+  },
+  {
+    type: 'Page/Route',
+    properties: {
+      exact: false,
+      path: ['/dev-monitoring/ns/:ns/rules/:id'],
+      loader: async () =>
+        (
+          await import(
+            './components/monitoring/alerts/MonitoringAlertsRulesDetailsPage' /* webpackChunkName: "dev-console-monitoring-rules" */
           )
         ).default,
     },
@@ -849,6 +880,16 @@ const plugin: Plugin<ConsumedExtensions> = [
             './components/ProjectSelectPage' /* webpackChunkName: "dev-console-projectselectpage" */
           )
         ).default,
+    },
+  },
+  {
+    type: 'Page/Route',
+    properties: {
+      exact: true,
+      path: ['/workload-hpa/ns/:ns/:resourceRef/:name'],
+      loader: async () =>
+        (await import('./components/hpa/HPAPage' /* webpackChunkName: "hpa-on-workload`" */))
+          .default,
     },
   },
   {
@@ -1065,6 +1106,13 @@ const plugin: Plugin<ConsumedExtensions> = [
     },
     flags: {
       required: [ALLOW_SERVICE_BINDING],
+    },
+  },
+  {
+    type: 'GuidedTour',
+    properties: {
+      perspective: 'dev',
+      tour: getGuidedTour(),
     },
   },
   ...helmTopologyPlugin,

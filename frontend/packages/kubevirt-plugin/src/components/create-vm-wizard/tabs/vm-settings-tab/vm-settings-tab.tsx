@@ -1,21 +1,33 @@
 import * as React from 'react';
-import { Form, FormSelect, FormSelectOption, TextArea, TextInput } from '@patternfly/react-core';
+import {
+  Form,
+  FormSelect,
+  FormSelectOption,
+  TextArea,
+  TextInput,
+  Button,
+  ButtonVariant,
+} from '@patternfly/react-core';
 import { connect } from 'react-redux';
 import { iGet, iGetIn } from '../../../../utils/immutable';
 import { FormFieldMemoRow } from '../../form/form-field-row';
 import { FormField, FormFieldType } from '../../form/form-field';
 import { FormSelectPlaceholderOption } from '../../../form/form-select-placeholder-option';
+import { ProvisionSource } from '../../../../constants/vm/provision-source';
 import { vmWizardActions } from '../../redux/actions';
 import {
   VMSettingsField,
   VMSettingsRenderableField,
   VMWizardProps,
   VMWizardStorage,
+  VMWizardTab,
+  VMWizardTabsMetadata,
 } from '../../types';
 import { iGetVmSettings } from '../../selectors/immutable/vm-settings';
 import { ActionType } from '../../redux/types';
 import { getPlaceholder } from '../../utils/renderable-field-utils';
 import { iGetCommonData } from '../../selectors/immutable/selectors';
+import { getStepsMetadata } from '../../selectors/immutable/wizard-selectors';
 import { iGetProvisionSourceStorage } from '../../selectors/immutable/storage';
 import { WorkloadProfile } from './workload-profile';
 import { OSFlavor } from './os-flavor';
@@ -42,10 +54,59 @@ export class VMSettingsTabComponent extends React.Component<VMSettingsTabCompone
       userTemplateName,
       userTemplates,
       commonTemplates,
+      cnvBaseImages,
       provisionSourceStorage,
       updateStorage,
       openshiftFlag,
+      steps,
+      goToStep,
     } = this.props;
+
+    const provisionSourceValue = this.getFieldValue(VMSettingsField.PROVISION_SOURCE_TYPE);
+    const storageBtn = (
+      <Button
+        isDisabled={!steps[VMWizardTab.STORAGE]?.canJumpTo}
+        isInline
+        onClick={() => goToStep(VMWizardTab.STORAGE)}
+        variant={ButtonVariant.link}
+      >
+        <strong>Storage</strong>
+      </Button>
+    );
+    const networkBtn = (
+      <Button
+        isDisabled={!steps[VMWizardTab.NETWORKING]?.canJumpTo}
+        isInline
+        onClick={() => goToStep(VMWizardTab.NETWORKING)}
+        variant={ButtonVariant.link}
+      >
+        <strong>Networking</strong>
+      </Button>
+    );
+
+    const getStorageMsg = () => {
+      switch (provisionSourceValue) {
+        case ProvisionSource.URL.toString():
+          return <>Enter URL here or edit the mounted disk in the {storageBtn} step</>;
+        case ProvisionSource.CONTAINER.toString():
+          return <>Enter container image here or edit the mounted disk in the {storageBtn} step</>;
+        case ProvisionSource.DISK.toString():
+          return <>Add a source disk in the {storageBtn} step</>;
+        default:
+          return null;
+      }
+    };
+    const provisionSourceDiskHelpMsg = (
+      <div className="pf-c-form__helper-text" aria-live="polite">
+        {getStorageMsg()}
+      </div>
+    );
+
+    const provisionSourceNetHelpMsg = (
+      <div className="pf-c-form__helper-text" aria-live="polite">
+        Add a network interface in the {networkBtn} step
+      </div>
+    );
 
     return (
       <Form className="co-m-pane__body co-m-pane__form kubevirt-create-vm-modal__form">
@@ -81,10 +142,16 @@ export class VMSettingsTabComponent extends React.Component<VMSettingsTabCompone
           commonTemplates={commonTemplates}
           operatinSystemField={this.getField(VMSettingsField.OPERATING_SYSTEM)}
           flavorField={this.getField(VMSettingsField.FLAVOR)}
+          cloneBaseDiskImageField={this.getField(VMSettingsField.CLONE_COMMON_BASE_DISK_IMAGE)}
+          mountWindowsGuestToolsField={this.getField(VMSettingsField.MOUNT_WINDOWS_GUEST_TOOLS)}
           userTemplate={this.getFieldValue(VMSettingsField.USER_TEMPLATE)}
           workloadProfile={this.getFieldValue(VMSettingsField.WORKLOAD_PROFILE)}
+          cnvBaseImages={cnvBaseImages}
           onChange={this.props.onFieldChange}
           openshiftFlag={openshiftFlag}
+          goToStorageStep={
+            steps[VMWizardTab.STORAGE]?.canJumpTo ? () => goToStep(VMWizardTab.STORAGE) : null
+          }
         />
         <MemoryCPU
           memoryField={this.getField(VMSettingsField.MEMORY)}
@@ -98,6 +165,7 @@ export class VMSettingsTabComponent extends React.Component<VMSettingsTabCompone
           userTemplate={this.getFieldValue(VMSettingsField.USER_TEMPLATE)}
           operatingSystem={this.getFieldValue(VMSettingsField.OPERATING_SYSTEM)}
           flavor={this.getFieldValue(VMSettingsField.FLAVOR)}
+          cnvBaseImages={cnvBaseImages}
           onChange={this.props.onFieldChange}
         />
         <FormFieldMemoRow
@@ -117,6 +185,13 @@ export class VMSettingsTabComponent extends React.Component<VMSettingsTabCompone
               )}
             </FormSelect>
           </FormField>
+          {[
+            ProvisionSource.URL.toString(),
+            ProvisionSource.CONTAINER.toString(),
+            ProvisionSource.DISK.toString(),
+          ].includes(provisionSourceValue) && provisionSourceDiskHelpMsg}
+          {[ProvisionSource.PXE.toString()].includes(provisionSourceValue) &&
+            provisionSourceNetHelpMsg}
         </FormFieldMemoRow>
         <ContainerSource
           field={this.getField(VMSettingsField.CONTAINER_IMAGE)}
@@ -138,8 +213,10 @@ const stateToProps = (state, { wizardReduxID }) => ({
   commonTemplates: iGetCommonData(state, wizardReduxID, VMWizardProps.commonTemplates),
   userTemplateName: iGetCommonData(state, wizardReduxID, VMWizardProps.userTemplateName),
   userTemplates: iGetCommonData(state, wizardReduxID, VMWizardProps.userTemplates),
+  cnvBaseImages: iGetCommonData(state, wizardReduxID, VMWizardProps.openshiftCNVBaseImages),
   openshiftFlag: iGetCommonData(state, wizardReduxID, VMWizardProps.openshiftFlag),
   provisionSourceStorage: iGetProvisionSourceStorage(state, wizardReduxID),
+  steps: getStepsMetadata(state, wizardReduxID),
 });
 
 type VMSettingsTabComponentProps = {
@@ -150,7 +227,10 @@ type VMSettingsTabComponentProps = {
   commonTemplates: any;
   userTemplateName: string;
   userTemplates: any;
+  cnvBaseImages: any;
   openshiftFlag: boolean;
+  goToStep: (stepID: VMWizardTab) => void;
+  steps: VMWizardTabsMetadata;
   wizardReduxID: string;
 };
 
@@ -159,6 +239,9 @@ const dispatchToProps = (dispatch, props) => ({
     dispatch(vmWizardActions[ActionType.SetVmSettingsFieldValue](props.wizardReduxID, key, value)),
   updateStorage: (storage: VMWizardStorage) => {
     dispatch(vmWizardActions[ActionType.UpdateStorage](props.wizardReduxID, storage));
+  },
+  goToStep: (stepID: VMWizardTab) => {
+    dispatch(vmWizardActions[ActionType.SetGoToStep](props.wizardReduxID, stepID));
   },
 });
 

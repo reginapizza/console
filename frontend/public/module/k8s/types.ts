@@ -364,6 +364,35 @@ export type DeploymentKind = {
   };
 } & K8sResourceCommon;
 
+export type HPAMetric = {
+  type: 'Object' | 'Pods' | 'Resource';
+  resource: {
+    name: string;
+    target: {
+      averageUtilization?: number;
+      type: string;
+    };
+  };
+};
+export type HorizontalPodAutoscalerKind = K8sResourceCommon & {
+  spec: {
+    scaleTargetRef: {
+      apiVersion: string;
+      kind: string;
+      name: string;
+    };
+    minReplicas?: number;
+    maxReplicas: number;
+    metrics?: HPAMetric[];
+  };
+  status?: {
+    currentReplicas: number;
+    desiredReplicas: number;
+    currentMetrics: any;
+    conditions: NodeCondition[];
+  };
+};
+
 export type StorageClassResourceKind = {
   provisioner: string;
   reclaimPolicy: string;
@@ -655,9 +684,11 @@ export type MachineConfigKind = {
 } & K8sResourceCommon;
 
 export enum MachineConfigPoolConditionType {
+  Degraded = 'Degraded',
+  NodeDegraded = 'NodeDegraded',
+  RenderDegraded = 'RenderDegraded',
   Updated = 'Updated',
   Updating = 'Updating',
-  Degraded = 'Degraded',
 }
 
 export type MachineConfigPoolCondition = {
@@ -679,9 +710,9 @@ export type MachineConfigPoolStatus = {
 
 export type MachineConfigPoolSpec = {
   machineConfigSelector?: Selector;
+  maxUnavailable?: number | string;
   nodeSelector?: Selector;
   paused: boolean;
-  maxUnavailable: number | string;
 };
 
 export type MachineConfigPoolKind = {
@@ -690,6 +721,7 @@ export type MachineConfigPoolKind = {
 } & K8sResourceKind;
 
 export type ClusterUpdate = {
+  force: boolean;
   image: string;
   version: string;
 };
@@ -700,6 +732,7 @@ export type UpdateHistory = {
   completionTime: string;
   version: string;
   image: string;
+  verified: boolean;
 };
 
 export enum ClusterVersionConditionType {
@@ -719,13 +752,15 @@ type ClusterVersionStatus = {
   conditions: ClusterVersionCondition[];
   desired: ClusterUpdate;
   history: UpdateHistory[];
+  observedGeneration: number;
+  versionHash: string;
 };
 
 type ClusterVersionSpec = {
   channel: string;
   clusterID: string;
-  desiredUpdate: ClusterUpdate;
-  upstream: string;
+  desiredUpdate?: ClusterUpdate;
+  upstream?: string;
 };
 
 export type ClusterVersionKind = {
@@ -920,9 +955,9 @@ export type GroupVersionKind = string;
 export type K8sResourceKindReference = GroupVersionKind | string;
 
 export type SecretKind = {
-  data: { [key: string]: string };
+  data?: { [key: string]: string };
   stringData?: { [key: string]: string };
-  type: string;
+  type?: string;
 } & K8sResourceCommon;
 
 export type ServiceAccountKind = {
@@ -1017,16 +1052,23 @@ export type VolumeSnapshotClassKind = K8sResourceCommon & {
 
 export type PersistentVolumeClaimKind = K8sResourceCommon & {
   spec: {
-    accessModes: string;
+    accessModes: string[];
     resources: {
       requests: {
         storage: string;
       };
     };
     storageClassName: string;
-    volumeMode: string;
+    volumeMode?: string;
+    /* Parameters in a cloned PVC */
+    dataSource?: {
+      name: string;
+      kind: string;
+      apiGroup: string;
+    };
+    /**/
   };
-  status: {
+  status?: {
     phase: string;
   };
 };

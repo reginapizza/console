@@ -8,36 +8,23 @@
 }
 
 .details-item__popover-button {
-  // Use `background-image: linear-gradient` to draw a dotted underline. This gives us more control over the styling.
-  background-image: linear-gradient(
-    to right,
-    var(--pf-c-button--m-plain--Color) 33%,
-    rgba(255, 255, 255, 0) 0%
-  );
-  background-position: bottom;
-  background-size: 3px 1px;
-  background-repeat: repeat-x;
   color: inherit !important;
   font-weight: inherit !important;
   margin-bottom: 3px;
-  padding: 0 !important;
-  &:focus,
-  &:hover {
-    background-image: linear-gradient(
-      to right,
-      var(--pf-c-button--m-tertiary--Color) 33%,
-      rgba(255, 255, 255, 0) 0%
-    );
+  @include co-popover-button();
+}
+
+.details-item__value--group {
+  border: 1px solid var(--pf-global--BorderColor--300);
+  margin-top: var(--pf-global--spacer--xs);
+  padding: var(--pf-global--spacer--md);
+
+  dd:last-child {
+    margin-bottom: 0 !important;
   }
 }
 
-.details-item__value--editable {
-  border: 1px solid var(--pf-global--BorderColor--300);
-  padding: var(--pf-global--spacer--md);
-  margin-top: var(--pf-global--spacer--xs);
-}
-
-.details-item__value--labels.details-item__value--editable {
+.details-item__value--labels {
   padding: var(--pf-global--spacer--xs);
   .co-m-label {
     margin: 2px;
