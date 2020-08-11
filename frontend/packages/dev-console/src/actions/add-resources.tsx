@@ -39,13 +39,6 @@ export const fromDockerfile = createKebabAction(
   allImportResourceAccess,
 );
 
-export const fromDevfile = createKebabAction(
-  'From Devfile',
-  <CubeIcon />,
-  ImportOptions.DEVFILE,
-  allImportResourceAccess,
-);
-
 export const fromDatabaseCatalog = createKebabAction(
   'Database',
   <DatabaseIcon />,
@@ -57,7 +50,6 @@ export const addResourceMenu: KebabAction[] = [
   containerImage,
   fromCatalog,
   fromDockerfile,
-  fromDevfile,
   fromDatabaseCatalog,
 ];
 
@@ -65,5 +57,4 @@ export const addResourceMenuWithoutCatalog: KebabAction[] = [
   fromGit,
   containerImage,
   fromDockerfile,
-  fromDevfile,
 ];

@@ -26,13 +26,6 @@ const ImportFlows: { [name: string]: ImportData } = {
     loader: () =>
       import('./GitImportForm' /* webpackChunkName: "git-import-form" */).then((m) => m.default),
   },
-  devfile: {
-    type: ImportTypes.devfile,
-    title: 'Import from devfile',
-    buildStrategy: 'Devfile',
-    loader: () =>
-      import('./DevfileImportForm' /* webpackChunkName: "devfile-import-form" */).then((m) => m.default),
-  },
   s2i: {
     type: ImportTypes.s2i,
     title: 'Create Source-to-Image Application',
@@ -72,15 +65,6 @@ const ImportPage: React.FunctionComponent<ImportPageProps> = ({ match, location 
     ];
   } else if (importType === ImportTypes.docker) {
     importData = ImportFlows.docker;
-    resources = [
-      {
-        kind: 'Project',
-        prop: 'projects',
-        isList: true,
-      },
-    ];
-  } else if (importType === ImportTypes.devfile) {
-    importData = ImportFlows.devfile;
     resources = [
       {
         kind: 'Project',
