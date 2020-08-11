@@ -51,6 +51,14 @@ export interface GitImportFormProps {
   };
 }
 
+export interface DevfileImportFormProps {
+  builderImages?: NormalizedBuilderImages; //don't think this line is needed but leaving it in here anyway in case it breaks something
+  projects?: {
+    data: [];
+    loaded: boolean;
+  };
+}
+
 export interface FirehoseList {
   data?: K8sResourceKind[];
   [key: string]: any;
@@ -93,6 +101,7 @@ export interface GitImportFormData {
   project: ProjectData;
   application: ApplicationData;
   git: GitData;
+  // devfile: DevfileData;
   docker: DockerData;
   serverless?: ServerlessData;
   pipeline?: PipelineData;
@@ -153,6 +162,11 @@ export interface DockerData {
   dockerfilePath?: string;
   containerPort?: number;
 }
+
+// export interface DevfileData {
+//   devfilePath?: string;
+//   containerPort?: number;
+// }
 
 export interface RouteData {
   disable?: boolean;
@@ -228,6 +242,7 @@ export const GitReadableTypes = {
 export enum ImportTypes {
   git = 'git',
   docker = 'docker',
+  devfile = 'devfile',
   s2i = 's2i',
 }
 
@@ -247,7 +262,7 @@ export interface ImportData {
   type: ImportTypes;
   title: string;
   buildStrategy: string;
-  loader: LazyLoader<GitImportFormProps | SourceToImageFormProps>;
+  loader: LazyLoader<GitImportFormProps | SourceToImageFormProps | DevfileImportFormProps >;
 }
 
 export enum TerminationTypes {
@@ -296,6 +311,7 @@ export enum ImportOptions {
   CONTAINER = 'CONTAINER',
   CATALOG = 'CATALOG',
   DOCKERFILE = 'DOCKERFILE',
+  DEVFILE = 'DEVFILE',
   DATABASE = 'DATABASE',
   EVENTSOURCE = 'EVENTSOURCE',
   EVENTPUBSUB = 'EVENTPUBSUB',

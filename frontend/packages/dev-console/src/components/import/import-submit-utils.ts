@@ -134,6 +134,7 @@ export const createOrUpdateBuildConfig = (
     application: { name: applicationName },
     git: { url: repository, type: gitType, ref = 'master', dir: contextDir, secret: secretName },
     docker: { dockerfilePath },
+    // devfile: { devfilePath },
     image: { tag: selectedTag },
     build: { env, triggers, strategy: buildStrategy },
     labels: userLabels,
@@ -152,6 +153,10 @@ export const createOrUpdateBuildConfig = (
         dockerStrategy: { env, dockerfilePath },
       };
       break;
+    // case 'Devfile':
+    //     buildStrategyData = {
+    //       devfileStrategy: { env, devfilePath },
+    //     };
     default:
       buildStrategyData = {
         sourceStrategy: {
