@@ -7,6 +7,7 @@ import {
 } from '@console/internal/module/k8s';
 import { BuildStrategyType } from '@console/internal/components/build';
 import { DeploymentConfigModel, DeploymentModel } from '@console/internal/models';
+import { hasIcon } from '@console/internal/components/catalog/catalog-item-icon';
 import { ServiceModel } from '@console/knative-plugin';
 import { UNASSIGNED_KEY } from '../../const';
 import { Resources, DeploymentData, GitReadableTypes } from '../import/import-types';
@@ -18,7 +19,6 @@ import { detectGitType } from '../import/import-validation-utils';
 export enum CreateApplicationFlow {
   Git = 'Import from Git',
   Dockerfile = 'Import from Dockerfile',
-  Devfile = 'Import from Devfile',
   Container = 'Deploy Image',
 }
 
@@ -41,8 +41,6 @@ export const getPageHeading = (buildStrategy: string): string => {
       return CreateApplicationFlow.Git;
     case BuildStrategyType.Docker:
       return CreateApplicationFlow.Dockerfile;
-    case BuildStrategyType.Devfile:
-      return CreateApplicationFlow.Devfile;
     default:
       return CreateApplicationFlow.Container;
   }
@@ -118,9 +116,6 @@ export const getBuildData = (buildConfig: K8sResourceKind, gitType: string) => {
       break;
     case BuildStrategyType.Docker:
       buildStrategyData = _.get(buildConfig, 'spec.strategy.dockerStrategy');
-      break;
-    case BuildStrategyType.Devfile:
-      buildStrategyData = _.get(buildConfig, 'spec.strategy.devfileStrategy');
       break;
     default:
       buildStrategyData = { env: [] };
@@ -281,7 +276,14 @@ export const getCommonInitialValues = (
   return commonInitialValues;
 };
 
-// how to incorporate this part into devfile?
+export const getIconInitialValues = (editAppResource: K8sResourceKind) => {
+  const runtimeLabel = editAppResource?.metadata?.labels?.['app.openshift.io/runtime'];
+  const runtimeIcon = runtimeLabel && hasIcon(runtimeLabel) ? runtimeLabel : null;
+  return {
+    runtimeIcon,
+  };
+};
+
 export const getGitAndDockerfileInitialValues = (
   buildConfig: K8sResourceKind,
   route: K8sResourceKind,
@@ -304,47 +306,6 @@ export const getGitAndDockerfileInitialValues = (
       ),
       containerPort: parseInt(_.split(_.get(route, 'spec.port.targetPort'), '-')[0], 10),
     },
-    image: {
-      selected: currentImage[0] || '',
-      recommended: '',
-      tag: currentImage[1] || '',
-      tagObj: {},
-      ports: [],
-      isRecommending: false,
-      couldNotRecommend: false,
-    },
-    build: getBuildData(buildConfig, git.type),
-  };
-  return initialValues;
-};
-
-// added this but didn't change the data for it yet
-export const getGitAndDevfileInitialValues = (
-  buildConfig: K8sResourceKind,
-  route: K8sResourceKind,
-) => {
-  if (_.isEmpty(buildConfig)) {
-    return {};
-  }
-  const currentImage = _.split(
-    _.get(buildConfig, 'spec.strategy.sourceStrategy.from.name', ''),
-    ':',
-  );
-  const git = getGitData(buildConfig);
-  const initialValues = {
-    git,
-    docker: {
-      dockerfilePath: _.get(
-        buildConfig,
-        'spec.strategy.dockerStrategy.dockerfilePath',
-        'Dockerfile',
-      ),
-      containerPort: parseInt(_.split(_.get(route, 'spec.port.targetPort'), '-')[0], 10),
-    },
-    // devfile: {
-    //   devfilePath: _.get(buildConfig, 'spec.strategy.devfileStrategy.devfilePath', 'Devfile'),
-    //   containerPort: parseInt(_.split(_.get(route, 'spec.port.targetPort'), '-')[0], 10),
-    // },
     image: {
       selected: currentImage[0] || '',
       recommended: '',
@@ -455,45 +416,38 @@ export const getInitialValues = (
   appName: string,
   namespace: string,
 ) => {
-  const commonValues = getCommonInitialValues(
-    _.get(appResources, 'editAppResource.data'),
-    _.get(appResources, 'route.data'),
-    appName,
-    namespace,
-  );
-  const gitDockerValues = getGitAndDockerfileInitialValues(
-    _.get(appResources, 'buildConfig.data'),
-    _.get(appResources, 'route.data'),
-  );
-  const gitDevfileValues = getGitAndDevfileInitialValues(
-    _.get(appResources, 'buildConfig.data'),
-    _.get(appResources, 'route.data'),
-  );
+  const editAppResourceData = appResources.editAppResource?.data;
+  const routeData = appResources.route?.data;
+  const buildConfigData = appResources.buildConfig?.data;
+
+  const commonValues = getCommonInitialValues(editAppResourceData, routeData, appName, namespace);
+  const gitDockerValues = getGitAndDockerfileInitialValues(buildConfigData, routeData);
+
+  let iconValues = {};
   let externalImageValues = {};
   let internalImageValues = {};
-
   if (_.isEmpty(gitDockerValues)) {
+    iconValues = getIconInitialValues(editAppResourceData);
     externalImageValues = getExternalImageInitialValues(appResources);
     internalImageValues = _.isEmpty(externalImageValues)
-      ? getInternalImageInitialValues(_.get(appResources, 'editAppResource.data'))
+      ? getInternalImageInitialValues(editAppResourceData)
       : {};
     if (
       _.isEmpty(externalImageValues) &&
       !_.get(internalImageValues, 'imageStream.tag') &&
       !_.get(internalImageValues, 'imageStream.image')
     ) {
-      const editAppResourceData = _.get(appResources, 'editAppResource.data');
       if (editAppResourceData?.kind === ServiceModel.kind) {
         internalImageValues = {};
-        externalImageValues = getExternalImagelValues(_.get(appResources, 'editAppResource.data'));
+        externalImageValues = getExternalImagelValues(editAppResourceData);
       }
     }
   }
 
   return {
     ...commonValues,
+    ...iconValues,
     ...gitDockerValues,
-    ...gitDevfileValues,
     ...externalImageValues,
     ...internalImageValues,
   };
