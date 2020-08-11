@@ -422,7 +422,101 @@ export const gitImportInitialValues: GitImportFormData = {
     secret: '',
     isUrlValidating: false,
   },
-  docker: { dockerfilePath: 'Dockerfile', containerPort: 8080 },
+  docker: { 
+    dockerfilePath: 'Dockerfile', 
+    containerPort: 8080  
+  },
+  // devfile: { 
+  //   devfilePath: 'devfile.yaml', 
+  //   containerPort: 8080 
+  // },
+  image: {
+    selected: 'python',
+    recommended: '',
+    tag: '3.6',
+    tagObj: {},
+    ports: [],
+    isRecommending: false,
+    couldNotRecommend: false,
+  },
+  build: {
+    env: [],
+    triggers: { webhook: true, image: true, config: true },
+    strategy: 'Source',
+  },
+  healthChecks: healthChecksProbeInitialData,
+};
+
+export const devfileImportInitialValues: GitImportFormData = {
+  formType: 'edit',
+  name: 'nationalparks-py',
+  application: { name: '', selectedKey: UNASSIGNED_KEY },
+  project: { name: 'div' },
+  route: {
+    disable: true,
+    create: true,
+    targetPort: '8080-tcp',
+    unknownTargetPort: '',
+    defaultUnknownPort: 8080,
+    path: '',
+    hostname: 'nationalparks-py-div.apps.rorai-cluster34.devcluster.openshift.com',
+    secure: false,
+    tls: {
+      termination: '',
+      insecureEdgeTerminationPolicy: '',
+      caCertificate: '',
+      certificate: '',
+      destinationCACertificate: '',
+      privateKey: '',
+    },
+  },
+  resources: Resources.OpenShift,
+  serverless: {
+    scaling: {
+      minpods: 0,
+      maxpods: '',
+      concurrencytarget: '',
+      concurrencylimit: '',
+    },
+  },
+  pipeline: { enabled: false },
+  deployment: { env: [], triggers: { image: true, config: true }, replicas: 1 },
+  labels: {},
+  limits: {
+    cpu: {
+      request: '',
+      requestUnit: '',
+      defaultRequestUnit: '',
+      limit: '',
+      limitUnit: '',
+      defaultLimitUnit: '',
+    },
+    memory: {
+      request: '',
+      requestUnit: 'Mi',
+      defaultRequestUnit: 'Mi',
+      limit: '',
+      limitUnit: 'Mi',
+      defaultLimitUnit: 'Mi',
+    },
+  },
+  git: {
+    url: 'https://github.com/divyanshiGupta/nationalparks-py',
+    type: 'github',
+    ref: '',
+    dir: '/',
+    showGitType: false,
+    secret: '',
+    isUrlValidating: false,
+  },
+  docker: { 
+    dockerfilePath: 'Dockerfile', 
+    containerPort: 8080  
+  },
+  // devfile: { 
+  //   devfilePath: 'devfile.yaml', 
+  //   containerPort: 8080 
+  // },
   image: {
     selected: 'python',
     recommended: '',
