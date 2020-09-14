@@ -40,6 +40,7 @@ const (
 	AuthLoginErrorEndpoint         = "/error"
 	authLogoutEndpoint             = "/auth/logout"
 	k8sProxyEndpoint               = "/api/kubernetes/"
+	devfileEndpoint                = "/api/devfile/"
 	graphQLEndpoint                = "/api/graphql"
 	prometheusProxyEndpoint        = "/api/prometheus"
 	prometheusTenancyProxyEndpoint = "/api/prometheus-tenancy"
