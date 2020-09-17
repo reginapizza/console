@@ -247,6 +247,8 @@ func (s *Server) HTTPHandler() http.Handler {
 		})),
 	)
 
+	handleFunc(devfileEndpoint, s.devfileHandler)
+
 	terminalProxy := terminal.NewProxy(
 		s.TerminalProxyTLSConfig,
 		s.K8sProxyConfig.TLSClientConfig,

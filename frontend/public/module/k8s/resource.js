@@ -79,13 +79,13 @@ export const k8sCreate = (kind, data, opts = {}) => {
   );
 };
 
-export const devfileCreate = (kind, data, opts = {}) => {
+export const devfileCreate =  (kind, data, opts = {}) =>  {
 
   data.metadata = data.metadata || {};
   data.metadata.namespace = data.metadata.namespace || "default";
 
 
-  let isMock = true;
+  let isMock = false;
   let buildStrategyData = {
     dockerStrategy: { env:data.build.buildEnv, dockerfileLocation: "mock-dockerfile-location" }
   };
@@ -258,7 +258,7 @@ export const devfileCreate = (kind, data, opts = {}) => {
      
   }
   return devfileResources;
-  // let temp = coFetchJSON.post(resourceURL(kind, Object.assign({ ns: data.metadata.namespace }, opts)),
+  // let temp = await coFetchJSON.post("/api/devfile",
   //   data,);
   // return temp;
   // return coFetchJSON.post(

@@ -57,7 +57,7 @@ export const createProject = (projectData: ProjectData): Promise<K8sResourceKind
   return k8sCreate(ProjectRequestModel, project);
 };
 
-export const createOrUpdateDevfileResources = (
+export const createOrUpdateDevfileResources =  (
   formData: GitImportFormData,
   imageStream: K8sResourceKind,
   dryRun: boolean,
@@ -132,26 +132,26 @@ export const createOrUpdateDevfileResources = (
       namespace: namespace,
       project: { name: namespace },
       application: { name: applicationName },
-      route: { create: canCreateRoute, disable },
+      route: { canCreateRoute: canCreateRoute, disable: disable },
       build: {
-        buildEnv,
+        env: buildEnv,
         strategy: buildStrategy,
         triggers: { webhook: webhookTrigger },
       },
       deployment: {
-        deployEnv,
-        replicas,
+        env: deployEnv,
+        replicas: replicas,
         triggers: { image: imageChange },
       },
       git: { url: repository, type: gitType, ref, dir: contextDir, secret: secretName },
-      devfile: { devfileContent, devfilePath },
+      devfile: { devfileContent: devfileContent, devfilePath: devfilePath },
       image: { ports: imagePorts, tag: selectedTag },
       userLabels: userLabels,
-      limits: { cpu, memory },
+      limits: { cpu: cpu, memory: memory },
       pipeline: pipeline,
       resources: resources,
       healthchecks: healthChecks,
-      routeSpec: { hostname, secure, path, tls, targetPort: imagePorts },
+      routeSpec: { hostname: hostname, secure: secure, path: path, tls: tls, targetPort: imagePorts },
       imageStreamName: imageStreamName,
       generatedImageStreamName: generatedImageStreamName,
       defaultLabels: defaultLabels,
@@ -163,8 +163,8 @@ export const createOrUpdateDevfileResources = (
       podLabels: podLabels,
     };
 
-    
-    let devfileResourceObjects =  devfileCreate(null, devfileData, dryRun ? dryRunOpt : {});
+    // dryRun = false;
+    let devfileResourceObjects = devfileCreate(null, devfileData, dryRun ? dryRunOpt : {});
 
     requests.push(
       createOrUpdateDevfileImageStream(
@@ -206,7 +206,7 @@ export const createOrUpdateDevfileResources = (
         devfileData.namespace,
         dryRun,
         generatedImageStreamName ? 'create' : verb,
-        devfileData.route.create,
+        devfileData.route.canCreateRoute,
         devfileData.route.disable,
         originalRoute,       
       ),
