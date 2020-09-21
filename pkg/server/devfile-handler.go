@@ -8,6 +8,7 @@ import (
 	buildv1 "github.com/openshift/api/build/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
+	"github.com/openshift/console/pkg/serverutils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,8 +45,12 @@ func (s *Server) devfileHandler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Printf(devfileResourcesJSONString)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(devfileResourcesJSON)
-	// serverutils.SendResponse(w, http.StatusOK, {})
+	// w.Write(devfileResourcesJSON)
+	serverutils.SendResponse(w, http.StatusOK, struct {
+		DevfileResources string `json:"devfileResources"`
+	}{
+		DevfileResources: string(devfileResourcesJSON),
+	})
 }
 
 func getImageStream() imagev1.ImageStream {

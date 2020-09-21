@@ -164,7 +164,8 @@ export const createOrUpdateDevfileResources =  async (
   };
 
 
-    let devfileResourceObjects = await devfileCreate(null, devfileData, dryRun ? dryRunOpt : {});
+    let x = await devfileCreate(null, devfileData, dryRun ? dryRunOpt : {});
+    let devfileResourceObjects = JSON.parse(x.devfileResources)
 
     requests.push(
       createOrUpdateDevfileImageStream(
