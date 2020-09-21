@@ -79,15 +79,16 @@ export const k8sCreate = (kind, data, opts = {}) => {
   );
 };
 
-export const devfileCreate =  (kind, data, opts = {}) =>  {
+export const devfileCreate =  async (kind, data, opts = {}) =>  {
 
   data.metadata = data.metadata || {};
   data.metadata.namespace = data.metadata.namespace || "default";
 
 
-  let isMock = false;
+  // let isMock = false;
+  let isMock = true;
   let buildStrategyData = {
-    dockerStrategy: { env:data.build.buildEnv, dockerfileLocation: "mock-dockerfile-location" }
+    dockerStrategy: { env:data.build.env, dockerfileLocation: "mock-dockerfile-location" }
   };
 
   let devfileResources; 
@@ -173,7 +174,7 @@ export const devfileCreate =  (kind, data, opts = {}) =>  {
                   name: data.name,
                   image: `${data.name}:latest`,
                   ports: data.image.ports,
-                  env: data.deployment.deployEnv,
+                  env: data.deployment.env,
                   resources: {
                     ...((data.limits.cpu.limit || data.limits.memory.limit) && {
                       limits: {
@@ -257,10 +258,10 @@ export const devfileCreate =  (kind, data, opts = {}) =>  {
     }
      
   }
-  return devfileResources;
-  // let temp = await coFetchJSON.post("/api/devfile",
-  //   data,);
-  // return temp;
+  // return devfileResources;
+  let temp = await coFetchJSON.post("/api/devfile/",
+    data,);
+  return temp;
   // return coFetchJSON.post(
   //   resourceURL(kind, Object.assign({ ns: data.metadata.namespace }, opts)),
   //   data,

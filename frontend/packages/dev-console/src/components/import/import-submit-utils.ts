@@ -57,7 +57,7 @@ export const createProject = (projectData: ProjectData): Promise<K8sResourceKind
   return k8sCreate(ProjectRequestModel, project);
 };
 
-export const createOrUpdateDevfileResources =  (
+export const createOrUpdateDevfileResources =  async (
   formData: GitImportFormData,
   imageStream: K8sResourceKind,
   dryRun: boolean,
@@ -127,44 +127,44 @@ export const createOrUpdateDevfileResources =  (
 
   let webhookSecret = generateSecret(); 
 
-    const devfileData = {
-      name: name,
-      namespace: namespace,
-      project: { name: namespace },
-      application: { name: applicationName },
-      route: { canCreateRoute: canCreateRoute, disable: disable },
-      build: {
-        env: buildEnv,
-        strategy: buildStrategy,
-        triggers: { webhook: webhookTrigger },
-      },
-      deployment: {
-        env: deployEnv,
-        replicas: replicas,
-        triggers: { image: imageChange },
-      },
-      git: { url: repository, type: gitType, ref, dir: contextDir, secret: secretName },
-      devfile: { devfileContent: devfileContent, devfilePath: devfilePath },
-      image: { ports: imagePorts, tag: selectedTag },
-      userLabels: userLabels,
-      limits: { cpu: cpu, memory: memory },
-      pipeline: pipeline,
-      resources: resources,
-      healthchecks: healthChecks,
-      routeSpec: { hostname: hostname, secure: secure, path: path, tls: tls, targetPort: imagePorts },
-      imageStreamName: imageStreamName,
-      generatedImageStreamName: generatedImageStreamName,
-      defaultLabels: defaultLabels,
-      annotations: annotations,
-      defaultAnnotations: defaultAnnotations,
-      webhookTriggerData: webhookTriggerData,
-      webhookSecret: webhookSecret,
-      probesData: ProbesData,
-      podLabels: podLabels,
-    };
+  const devfileData = {
+    name: name,
+    namespace: namespace,
+    project: { name: namespace },
+    application: { name: applicationName },
+    route: { create: canCreateRoute, disable: disable },
+    build: {
+      env: buildEnv,
+      strategy: buildStrategy,
+      triggers: { webhook: webhookTrigger },
+    },
+    deployment: {
+      env: deployEnv,
+      replicas: replicas,
+      triggers: { image: imageChange },
+    },
+    git: { url: repository, type: gitType, ref: ref, dir: contextDir, secret: secretName },
+    devfile: { devfileContent: devfileContent, devfilePath: devfilePath },
+    image: { ports: imagePorts, tag: selectedTag },
+    userLabels: userLabels,
+    limits: { cpu: cpu, memory: memory },
+    pipeline: pipeline,
+    resources: resources,
+    healthchecks: healthChecks,
+    routeSpec: { hostname: hostname, secure: secure, path: path, tls: tls, targetPort: imagePorts },
+    imageStreamName: imageStreamName,
+    generatedImageStreamName: generatedImageStreamName,
+    defaultLabels: defaultLabels,
+    annotations: annotations,
+    defaultAnnotations: defaultAnnotations,
+    webhookTriggerData: webhookTriggerData,
+    webhookSecret: webhookSecret,
+    probesData: ProbesData,
+    podLabels: podLabels,
+  };
 
-    // dryRun = false;
-    let devfileResourceObjects = devfileCreate(null, devfileData, dryRun ? dryRunOpt : {});
+
+    let devfileResourceObjects = await devfileCreate(null, devfileData, dryRun ? dryRunOpt : {});
 
     requests.push(
       createOrUpdateDevfileImageStream(
@@ -206,7 +206,7 @@ export const createOrUpdateDevfileResources =  (
         devfileData.namespace,
         dryRun,
         generatedImageStreamName ? 'create' : verb,
-        devfileData.route.canCreateRoute,
+        devfileData.route.create,
         devfileData.route.disable,
         originalRoute,       
       ),
