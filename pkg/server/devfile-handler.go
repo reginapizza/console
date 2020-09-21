@@ -2,13 +2,16 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	buildv1 "github.com/openshift/api/build/v1"
 	imagev1 "github.com/openshift/api/image/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	intstr "k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -25,8 +28,24 @@ func (s *Server) devfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	// devfileContentBytes := []byte(data.Devfile.DevfileContent)
 
-	w.WriteHeader(http.StatusNotFound)
-	w.Write([]byte("reached devfile handler"))
+	devfileResources := devfileResources{
+		ImageStream:    getImageStream(),
+		BuildResource:  getBuildResource(),
+		DeployResource: getDeployResource(),
+		Service:        getService(),
+		Route:          getRoute(),
+	}
+
+	devfileResourcesJSON, err := json.Marshal(devfileResources)
+	if err != nil {
+	}
+
+	// devfileResourcesJSONString := string(devfileResourcesJSON)
+	// fmt.Printf(devfileResourcesJSONString)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(devfileResourcesJSON)
+	// serverutils.SendResponse(w, http.StatusOK, {})
 }
 
 func getImageStream() imagev1.ImageStream {
@@ -83,7 +102,7 @@ func getDeployResource() appsv1.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app": data.Name},
 			},
-			// Replicas: new(int32) data.Deployment.Replicas),
+			Replicas: data.Deployment.Replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: addmap(data.DefaultLabels, data.UserLabls),
@@ -112,17 +131,48 @@ func getDeployResource() appsv1.Deployment {
 	return deployment
 }
 
-// func getService() corev1.Service {
+func getService() corev1.Service {
 
-// 	service := corev1.Service{
-// 		TypeMeta: createTypeMeta("Service", "v1"),
-// 		ObjectMeta: createObjectMeta(data.Name, data.Namespace, addmap(data.DefaultLabels, data.UserLabls), data.Annotations),
-// 		Spec: corev1.ServiceSpec{
-// 			Selector: data.PodLabels,
-// 			Ports: ,
-// 		},
-// 	}
-// 	return service
-// }
+	service := corev1.Service{
+		TypeMeta:   createTypeMeta("Service", "v1"),
+		ObjectMeta: createObjectMeta(data.Name, data.Namespace, addmap(data.DefaultLabels, data.UserLabls), data.Annotations),
+		Spec: corev1.ServiceSpec{
+			Selector: data.PodLabels,
+			Ports: []corev1.ServicePort{
+				{
+					Name: fmt.Sprintf("%d-%s", data.Image.Ports[0].ContainerPort, data.Image.Ports[0].Protocol),
+					Port: data.Image.Ports[0].ContainerPort,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: data.Image.Ports[0].ContainerPort,
+						StrVal: "",
+					},
+					Protocol: data.Image.Ports[0].Protocol,
+				},
+			},
+		},
+	}
+	return service
+}
 
-func getRoute() {}
+func getRoute() routev1.Route {
+
+	route := routev1.Route{
+		TypeMeta:   createTypeMeta("Route", "route.openshift.io/v1"),
+		ObjectMeta: createObjectMeta(data.Name, data.Namespace, addmap(data.DefaultLabels, data.UserLabls), data.Annotations),
+		Spec: routev1.RouteSpec{
+			Host: data.RouteSpec.Hostname,
+			Path: data.RouteSpec.Path,
+			Port: &routev1.RoutePort{
+				TargetPort: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: int32(0),
+					StrVal: fmt.Sprintf("%d-%s", data.Image.Ports[0].ContainerPort, data.Image.Ports[0].Protocol),
+				},
+			},
+			WildcardPolicy: routev1.WildcardPolicyNone,
+		},
+	}
+
+	return route
+}

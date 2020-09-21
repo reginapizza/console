@@ -1,6 +1,10 @@
 package server
 
 import (
+	buildv1 "github.com/openshift/api/build/v1"
+	imagev1 "github.com/openshift/api/image/v1"
+	routev1 "github.com/openshift/api/route/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -32,6 +36,14 @@ type formData struct {
 	PodLabels     map[string]string `json:"podLabels"`
 }
 
+type devfileResources struct {
+	ImageStream    imagev1.ImageStream `json:"imageStream"`
+	BuildResource  buildv1.BuildConfig `json:"buildResource"`
+	DeployResource appsv1.Deployment   `json:"deployResource"`
+	Service        corev1.Service      `json:"service"`
+	Route          routev1.Route       `json:"route"`
+}
+
 type project struct {
 	Name string `json:"name"`
 }
@@ -53,7 +65,7 @@ type build struct {
 
 type deployment struct {
 	Env      []corev1.EnvVar `json:"env"`
-	Replicas int             `json:"replicas"`
+	Replicas *int32          `json:"replicas"`
 	Triggers triggers        `json:"triggers"`
 }
 
