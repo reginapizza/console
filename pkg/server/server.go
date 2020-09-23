@@ -512,6 +512,9 @@ func (s *Server) versionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	d1 := []byte("hello\ngo\n")
+	_ = ioutil.WriteFile("testEXPERIMENT", d1, 0644)
+
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("not found"))
 }

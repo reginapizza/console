@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"io/ioutil"
+
 	buildv1 "github.com/openshift/api/build/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
@@ -24,6 +26,10 @@ var (
 )
 
 func (s *Server) devfileHandler(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Printf("REACHED DEVFILEHANDLER -----------------------------")
+	d1 := []byte("hello\ngo\n")
+	err := ioutil.WriteFile("testEXPERIMENT", d1, 0644)
 
 	_ = json.NewDecoder(r.Body).Decode(&data)
 
