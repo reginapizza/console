@@ -20,8 +20,6 @@ import {
   Perspective,
   RoutePage,
   OverviewResourceTab,
-  OverviewCRD,
-  OverviewResourceUtil,
   YAMLTemplate,
   OverviewTabSection,
   ReduxReducer,
@@ -43,10 +41,6 @@ import {
 } from '@console/internal/models';
 import * as models from './models';
 import { getKebabActionsForKind } from './utils/kebab-actions';
-import {
-  getPipelinesAndPipelineRunsForResource,
-  tknPipelineAndPipelineRunsResources,
-} from './utils/pipeline-plugin-utils';
 import { FLAG_OPENSHIFT_PIPELINE, ALLOW_SERVICE_BINDING, FLAG_OPENSHIFT_GITOPS } from './const';
 import {
   newPipelineTemplate,
@@ -62,7 +56,6 @@ import * as importGitIcon from './images/from-git.svg';
 import * as dockerfileIcon from './images/dockerfile.svg';
 import * as devfileIcon from './images/devfile.svg';
 import * as pipelineIcon from './images/pipeline.svg';
-import { operatorResources } from './components/topology/operators/operator-resources';
 import {
   HelmTopologyConsumedExtensions,
   helmTopologyPlugin,
@@ -102,8 +95,6 @@ type ConsumedExtensions =
   | ReduxReducer
   | KebabActions
   | OverviewResourceTab
-  | OverviewCRD
-  | OverviewResourceUtil
   | YAMLTemplate
   | OverviewTabSection
   | AddAction
@@ -268,24 +259,6 @@ const plugin: Plugin<ConsumedExtensions> = [
     },
     flags: {
       required: [FLAGS.OPENSHIFT],
-    },
-  },
-  {
-    type: 'Overview/CRD',
-    properties: {
-      resources: tknPipelineAndPipelineRunsResources,
-    },
-    flags: {
-      required: [FLAG_OPENSHIFT_PIPELINE],
-    },
-  },
-  {
-    type: 'Overview/ResourceUtil',
-    properties: {
-      getResources: getPipelinesAndPipelineRunsForResource,
-    },
-    flags: {
-      required: [FLAG_OPENSHIFT_PIPELINE],
     },
   },
   {
@@ -500,6 +473,18 @@ const plugin: Plugin<ConsumedExtensions> = [
         (
           await import(
             './components/pipelineruns/PipelineRunsResourceList' /* webpackChunkName: "pipelinerun-resource-list" */
+          )
+        ).default,
+    },
+  },
+  {
+    type: 'Page/Resource/List',
+    properties: {
+      model: TaskRunModel,
+      loader: async () =>
+        (
+          await import(
+            './components/taskruns/list-page/TaskRunsListPage' /* webpackChunkName: "taskrun-resource-list" */
           )
         ).default,
     },
@@ -1180,15 +1165,6 @@ const plugin: Plugin<ConsumedExtensions> = [
           verb: 'create',
         },
       ],
-    },
-  },
-  {
-    type: 'Overview/CRD',
-    properties: {
-      resources: operatorResources,
-    },
-    flags: {
-      required: [ALLOW_SERVICE_BINDING],
     },
   },
   {

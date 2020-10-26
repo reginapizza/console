@@ -5,17 +5,15 @@ import {
   ModelFeatureFlag,
   ModelDefinition,
   OverviewResourceTab,
-  OverviewCRD,
-  OverviewResourceUtil,
   ResourceListPage,
   ResourceDetailsPage,
   RoutePage,
   GlobalConfig,
   KebabActions,
   YAMLTemplate,
+  HrefNavItem,
 } from '@console/plugin-sdk';
 import { NamespaceRedirect } from '@console/internal/components/utils/namespace-redirect';
-import { referenceForModel } from '@console/internal/module/k8s';
 import { AddAction } from '@console/dev-console/src/extensions/add-actions';
 import * as models from './models';
 import { yamlTemplates } from './yaml-templates';
@@ -27,22 +25,7 @@ import {
   FLAG_KNATIVE_SERVING_SERVICE,
   FLAG_KNATIVE_EVENTING,
 } from './const';
-import {
-  knativeServingResourcesRevision,
-  knativeServingResourcesConfigurations,
-  knativeServingResourcesRoutes,
-  knativeServingResourcesServices,
-  getKnativeServingRevisions,
-  getKnativeServingConfigurations,
-  getKnativeServingRoutes,
-  getKnativeServingServices,
-  knativeEventingResourcesSubscription,
-} from './utils/get-knative-resources';
 import { getKebabActionsForKind } from './utils/kebab-actions';
-import {
-  getDynamicEventSourcesResourceList,
-  getDynamicChannelResourceList,
-} from './utils/fetch-dynamic-eventsources-utils';
 import { TopologyConsumedExtensions, topologyPlugin } from './topology/topology-plugin';
 import * as eventSourceIcon from './imgs/event-source.svg';
 import * as channelIcon from './imgs/channel.svg';
@@ -53,11 +36,10 @@ type ConsumedExtensions =
   | ModelDefinition
   | GlobalConfig
   | OverviewResourceTab
-  | OverviewCRD
-  | OverviewResourceUtil
   | ResourceListPage
   | RoutePage
   | KebabActions
+  | HrefNavItem
   | YAMLTemplate
   | ResourceDetailsPage
   | AddAction
@@ -126,42 +108,21 @@ const plugin: Plugin<ConsumedExtensions> = [
     },
   },
   {
-    type: 'NavItem/ResourceNS',
+    type: 'NavItem/Href',
     properties: {
+      perspective: 'admin',
       section: 'Serverless',
       componentProps: {
-        name: models.ServiceModel.labelPlural,
-        resource: referenceForModel(models.ServiceModel),
+        name: 'Serving',
+        href: '/serving',
       },
     },
     flags: {
-      required: [FLAG_KNATIVE_SERVING_SERVICE],
-    },
-  },
-  {
-    type: 'NavItem/ResourceNS',
-    properties: {
-      section: 'Serverless',
-      componentProps: {
-        name: models.RevisionModel.labelPlural,
-        resource: referenceForModel(models.RevisionModel),
-      },
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_REVISION],
-    },
-  },
-  {
-    type: 'NavItem/ResourceNS',
-    properties: {
-      section: 'Serverless',
-      componentProps: {
-        name: models.RouteModel.labelPlural,
-        resource: referenceForModel(models.RouteModel),
-      },
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_ROUTE],
+      required: [
+        FLAG_KNATIVE_SERVING_SERVICE,
+        FLAG_KNATIVE_SERVING_REVISION,
+        FLAG_KNATIVE_SERVING_ROUTE,
+      ],
     },
   },
   {
@@ -173,105 +134,6 @@ const plugin: Plugin<ConsumedExtensions> = [
         import(
           './components/overview/OverviewDetailsKnativeResourcesTab' /* webpackChunkName: "knative-overview" */
         ).then((m) => m.default),
-    },
-  },
-  {
-    type: 'Overview/CRD',
-    properties: {
-      resources: knativeServingResourcesRevision,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_REVISION],
-    },
-  },
-  {
-    type: 'Overview/CRD',
-    properties: {
-      resources: knativeServingResourcesConfigurations,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_CONFIGURATION],
-    },
-  },
-  {
-    type: 'Overview/CRD',
-    properties: {
-      resources: knativeServingResourcesRoutes,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_ROUTE],
-    },
-  },
-  {
-    type: 'Overview/CRD',
-    properties: {
-      resources: knativeServingResourcesServices,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_REVISION],
-    },
-  },
-  {
-    type: 'Overview/CRD',
-    properties: {
-      resources: getDynamicEventSourcesResourceList,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_EVENTING],
-    },
-  },
-  {
-    type: 'Overview/CRD',
-    properties: {
-      resources: knativeEventingResourcesSubscription,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_EVENTING],
-    },
-  },
-  {
-    type: 'Overview/CRD',
-    properties: {
-      resources: getDynamicChannelResourceList,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_EVENTING],
-    },
-  },
-  {
-    type: 'Overview/ResourceUtil',
-    properties: {
-      getResources: getKnativeServingRevisions,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_REVISION],
-    },
-  },
-  {
-    type: 'Overview/ResourceUtil',
-    properties: {
-      getResources: getKnativeServingConfigurations,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_CONFIGURATION],
-    },
-  },
-  {
-    type: 'Overview/ResourceUtil',
-    properties: {
-      getResources: getKnativeServingRoutes,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_ROUTE],
-    },
-  },
-  {
-    type: 'Overview/ResourceUtil',
-    properties: {
-      getResources: getKnativeServingServices,
-    },
-    flags: {
-      required: [FLAG_KNATIVE_SERVING_SERVICE],
     },
   },
   {
@@ -293,7 +155,31 @@ const plugin: Plugin<ConsumedExtensions> = [
       loader: async () =>
         (
           await import(
-            './components/revisions/RevisionDetailsPage' /* webpackChunkName: "knative-revisions-details page" */
+            './components/revisions/RevisionDetailsPage' /* webpackChunkName: "revision-details-page" */
+          )
+        ).default,
+    },
+  },
+  {
+    type: 'Page/Resource/Details',
+    properties: {
+      model: models.RouteModel,
+      loader: async () =>
+        (
+          await import(
+            './components/routes/RouteDetailsPage' /* webpackChunkName: "route-details-page" */
+          )
+        ).default,
+    },
+  },
+  {
+    type: 'Page/Resource/Details',
+    properties: {
+      model: models.ServiceModel,
+      loader: async () =>
+        (
+          await import(
+            './components/services/ServiceDetailsPage' /* webpackChunkName: "service-details-page" */
           )
         ).default,
     },
@@ -306,6 +192,30 @@ const plugin: Plugin<ConsumedExtensions> = [
         (
           await import(
             './components/services/ServicesPage' /* webpackChunkName: "knative-services-page" */
+          )
+        ).default,
+    },
+  },
+  {
+    type: 'Page/Resource/Details',
+    properties: {
+      model: models.EventingTriggerModel,
+      loader: async () =>
+        (
+          await import(
+            './components/pub-sub/details/TriggerDetailsPage' /* webpackChunkName: "trigger-details-page" */
+          )
+        ).default,
+    },
+  },
+  {
+    type: 'Page/Resource/Details',
+    properties: {
+      model: models.EventingSubscriptionModel,
+      loader: async () =>
+        (
+          await import(
+            './components/pub-sub/details/SubscriptionDetailsPage' /* webpackChunkName: "subscription-details-page" */
           )
         ).default,
     },
@@ -381,6 +291,30 @@ const plugin: Plugin<ConsumedExtensions> = [
     },
     flags: {
       required: [FLAG_KNATIVE_EVENTING],
+    },
+  },
+  {
+    type: 'Page/Route',
+    properties: {
+      exact: true,
+      path: ['/serving'],
+      component: NamespaceRedirect,
+    },
+    flags: {
+      required: [FLAG_KNATIVE_SERVING],
+    },
+  },
+  {
+    type: 'Page/Route',
+    properties: {
+      exact: false,
+      path: ['/serving/all-namespaces', '/serving/ns/:ns'],
+      loader: async () =>
+        (
+          await import(
+            './components/overview/serving-list/ServingListsPage' /* webpackChunkName: "serving-list-page" */
+          )
+        ).default,
     },
   },
   {

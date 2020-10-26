@@ -237,12 +237,19 @@ const Tooltip: React.FC<TooltipProps> = ({ active, datum, width, x, y }) => {
   );
 };
 
-const graphLabelComponent = <Tooltip />;
+const tooltipComponent = <Tooltip />;
 
-// Set activateData to false to work around VictoryVoronoiContainer crash (see
-// https://github.com/FormidableLabs/victory/issues/1314)
+// We don't use this result, but we need to return a string so that the label (tooltip) is rendered
+const tooltipLabels = () => ' ';
+
 const graphContainer = (
-  <ChartVoronoiContainer activateData={false} className="query-browser__graph-container" />
+  // Set activateData to false to work around VictoryVoronoiContainer crash (see
+  // https://github.com/FormidableLabs/victory/issues/1314)
+  <ChartVoronoiContainer
+    activateData={false}
+    className="query-browser__graph-container"
+    voronoiPadding={0}
+  />
 );
 
 const LegendContainer = ({ children }: { children?: React.ReactNode }) => {
@@ -342,8 +349,8 @@ const Graph: React.FC<GraphProps> = React.memo(
                 key={i}
                 data={values}
                 groupComponent={<g />}
-                labels={() => ' '}
-                labelComponent={graphLabelComponent}
+                labelComponent={tooltipComponent}
+                labels={tooltipLabels}
               />
             ))}
           </ChartStack>
@@ -357,8 +364,8 @@ const Graph: React.FC<GraphProps> = React.memo(
                   key={i}
                   data={values}
                   groupComponent={<g />}
-                  labels={() => ' '}
-                  labelComponent={graphLabelComponent}
+                  labelComponent={tooltipComponent}
+                  labels={tooltipLabels}
                 />
               ),
             )}
@@ -449,6 +456,13 @@ const ZoomableGraph: React.FC<ZoomableGraphProps> = ({
   const [x1, setX1] = React.useState(0);
   const [x2, setX2] = React.useState(0);
 
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsZooming(false);
+    }
+  };
+
   const onMouseDown = (e: React.MouseEvent) => {
     setIsZooming(true);
     const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
@@ -486,7 +500,10 @@ const ZoomableGraph: React.FC<ZoomableGraphProps> = ({
     onZoom(from, to);
   };
 
-  const handlers = isZooming ? { onMouseMove, onMouseUp } : { onMouseDown };
+  // tabIndex is required to enable the onKeyDown handler
+  const handlers = isZooming
+    ? { onKeyDown, onMouseMove, onMouseUp, tabIndex: -1 }
+    : { onMouseDown };
 
   return (
     <div className="query-browser__zoom" {...handlers}>
@@ -746,7 +763,11 @@ const QueryBrowser_: React.FC<QueryBrowserProps> = ({
               variant="info"
             />
           )}
-          <div className="graph-wrapper graph-wrapper--query-browser">
+          <div
+            className={classNames('graph-wrapper graph-wrapper--query-browser', {
+              'graph-wrapper--query-browser--with-legend': !!formatLegendLabel,
+            })}
+          >
             <div ref={containerRef} style={{ width: '100%' }}>
               {width > 0 && (
                 <>
