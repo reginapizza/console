@@ -2,12 +2,15 @@ import * as React from 'react';
 import { BreadCrumbs, ResourceIcon } from '@console/internal/components/utils';
 import { Split, SplitItem, Label } from '@patternfly/react-core';
 import { routeDecoratorIcon } from '../../import/render-utils';
+// import { ExternalLinkAltIcon, LinkIcon } from '@patternfly/react-icons';
+import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import './GitOpsDetailsPageHeading.scss';
 
 interface GitOpsDetailsPageHeadingProps {
   url: string;
   appName: string;
   manifestURL: string;
+  // argoURL: string;
   badge?: React.ReactNode;
 }
 
@@ -15,6 +18,7 @@ const GitOpsDetailsPageHeading: React.FC<GitOpsDetailsPageHeadingProps> = ({
   url,
   appName,
   manifestURL,
+  // argoURL,
   badge,
 }) => {
   const breadcrumbs = [
@@ -27,6 +31,9 @@ const GitOpsDetailsPageHeading: React.FC<GitOpsDetailsPageHeadingProps> = ({
       path: `${url}`,
     },
   ];
+
+  const argoURL =
+    'https://argocd-server-argocd.apps.dev-svc-4.6-103007.devcluster.openshift.com/applications';
 
   return (
     <div className="odc-gitops-details-page-heading co-m-nav-title co-m-nav-title--breadcrumbs">
@@ -55,6 +62,15 @@ const GitOpsDetailsPageHeading: React.FC<GitOpsDetailsPageHeadingProps> = ({
               {manifestURL}
             </a>
           </Label>
+        </SplitItem>
+      </Split>
+      <Split className="odc-gitops-details-page-heading__argocd" hasGutter>
+        <SplitItem>Argo CD:</SplitItem>
+        <SplitItem isFilled>
+          <a href={argoURL} rel="noopener noreferrer" target="_blank">
+            https://argocd-server-argocd.apps.dev-svc-4.6-103007.devcluster.openshift.com/applications
+            <ExternalLinkAltIcon style={{ fontSize: 12, marginLeft: 5, marginRight: 5 }} />
+          </a>
         </SplitItem>
       </Split>
     </div>
