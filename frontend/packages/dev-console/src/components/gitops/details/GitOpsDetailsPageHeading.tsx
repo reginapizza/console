@@ -1,8 +1,13 @@
 import * as React from 'react';
-import { BreadCrumbs, ResourceIcon } from '@console/internal/components/utils';
+import { BreadCrumbs, ResourceIcon, ExternalLink } from '@console/internal/components/utils';
 import { Split, SplitItem, Label } from '@patternfly/react-core';
 import { routeDecoratorIcon } from '../../import/render-utils';
 import './GitOpsDetailsPageHeading.scss';
+
+import * as _ from 'lodash';
+import { useK8sWatchResource } from '@console/internal/components/utils/k8s-watch-hook';
+import { referenceForModel } from '@console/internal/module/k8s';
+import { ConsoleLinkModel } from '@console/internal/models';
 
 interface GitOpsDetailsPageHeadingProps {
   url: string;
@@ -27,6 +32,20 @@ const GitOpsDetailsPageHeading: React.FC<GitOpsDetailsPageHeadingProps> = ({
       path: `${url}`,
     },
   ];
+
+  const [consoleLinks] = useK8sWatchResource({
+    isList: true,
+    kind: referenceForModel(ConsoleLinkModel),
+    optional: true,
+  });
+  let aLink;
+  _.filter(consoleLinks, (link: any) => {
+    if (link.spec.location === 'ApplicationMenu') {
+      aLink = link;
+      return true;
+    }
+    return false;
+  });
 
   return (
     <div className="odc-gitops-details-page-heading co-m-nav-title co-m-nav-title--breadcrumbs">
@@ -56,6 +75,16 @@ const GitOpsDetailsPageHeading: React.FC<GitOpsDetailsPageHeadingProps> = ({
             </a>
           </Label>
         </SplitItem>
+      </Split>
+      <Split className="odc-gitops-details-page-heading__repo" hasGutter>
+        {aLink && (
+          <>
+            <SplitItem>{aLink.spec.text}:</SplitItem>
+            <dd>
+              <ExternalLink href={aLink.spec.href} text={aLink.spec.href} />
+            </dd>
+          </>
+        )}
       </Split>
     </div>
   );
