@@ -1,0 +1,13 @@
+.odc-gitops-list-page-heading {
+    align-items: center;
+    font-weight: normal;
+    font-size: 12px;
+    // vertical-align: middle;
+    &__argocd {
+        align-items: center;
+        font-weight: normal;
+        font-size: 12px;
+        margin-right: var(--pf-global--spacer--sm);
+        vertical-align: middle;
+      }
+  }
