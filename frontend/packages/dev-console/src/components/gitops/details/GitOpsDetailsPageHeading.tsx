@@ -1,8 +1,12 @@
 import * as React from 'react';
-import { BreadCrumbs, ResourceIcon } from '@console/internal/components/utils';
+import { BreadCrumbs, ResourceIcon, ExternalLink } from '@console/internal/components/utils';
 import { Split, SplitItem, Label } from '@patternfly/react-core';
 import { routeDecoratorIcon } from '../../import/render-utils';
 import './GitOpsDetailsPageHeading.scss';
+import * as _ from 'lodash-es';
+import { useK8sWatchResource } from '@console/internal/components/utils/k8s-watch-hook';
+import { referenceForModel } from '@console/internal/module/k8s';
+import { ConsoleLinkModel } from '@console/internal/models';
 
 interface GitOpsDetailsPageHeadingProps {
   url: string;
@@ -28,6 +32,22 @@ const GitOpsDetailsPageHeading: React.FC<GitOpsDetailsPageHeadingProps> = ({
     },
   ];
 
+  const [consoleLinks] = useK8sWatchResource({
+    isList: true,
+    kind: referenceForModel(ConsoleLinkModel),
+    optional: true,
+  });
+  let aLink;
+  _.filter(consoleLinks, (link: any) => {
+    if (link.spec.location === 'ApplicationMenu') {
+      if (link.metadata.name === "argocd") {
+        aLink = link;
+        return true;
+      }
+      return false;
+    }
+  });
+
   return (
     <div className="odc-gitops-details-page-heading co-m-nav-title co-m-nav-title--breadcrumbs">
       <BreadCrumbs breadcrumbs={breadcrumbs} />
@@ -36,7 +56,11 @@ const GitOpsDetailsPageHeading: React.FC<GitOpsDetailsPageHeadingProps> = ({
           <ResourceIcon kind="application" className="co-m-resource-icon--lg" />
           <span className="co-resource-item__resource-name">{appName}</span>
         </div>
-        {badge && <span className="co-m-pane__heading-badge">{badge}</span>}
+        {badge && 
+          <span className="co-m-pane__heading-badge">
+              {aLink && <ExternalLink href={aLink.spec.href} text="Argo CD" additionalClassName="odc-gitops-details-page-heading__argocd"/>}
+              {badge}
+          </span>}
       </h1>
       <Split className="odc-gitops-details-page-heading__repo" hasGutter>
         <SplitItem>Manifest File Repo:</SplitItem>
