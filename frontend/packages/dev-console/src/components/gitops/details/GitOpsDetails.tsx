@@ -35,7 +35,7 @@ const GitOpsDetails: React.FC<GitOpsDetailsProps> = ({ envs, appName }) => {
               <StackItem>
                 <Card>
                   <CardTitle className="odc-gitops-details__env-section__header">
-                    <Stack hasGutter>
+                    <Stack>
                       <StackItem>
                         <Split style={{ alignItems: 'center' }} hasGutter>
                           <SplitItem
@@ -70,7 +70,7 @@ const GitOpsDetails: React.FC<GitOpsDetailsProps> = ({ envs, appName }) => {
                         )}
                       </StackItem>
                       <StackItem className="co-truncate co-nowrap">
-                        <span className="co-resource-item">
+                        <span className="co-resource-item odc-gitops-details__env-section__co-resource-item">
                           <ResourceIcon kind="Project" />
                           <span className="co-resource-item__resource-name">{env.environment}</span>
                         </span>
@@ -80,6 +80,7 @@ const GitOpsDetails: React.FC<GitOpsDetailsProps> = ({ envs, appName }) => {
                           <ExternalLink
                             href={`${argocdLink.spec.href}/applications/${env.environment}-${appName}`}
                             text="Argo CD"
+                            additionalClassName="odc-gitops-details__env-section__argocd-link"
                           />
                         )}
                       </StackItem>
