@@ -78,7 +78,7 @@ const GitOpsDetails: React.FC<GitOpsDetailsProps> = ({ envs, appName }) => {
                         </span>
                       </StackItem>
                       <StackItem className="co-truncate co-nowrap">
-                        {env.environment && (
+                        {env.environment && argocdLink && (
                           <ExternalLink
                             href={`${argocdLink.spec.href}/applications/${env.environment}-${appName}`}
                             text="Argo CD"
