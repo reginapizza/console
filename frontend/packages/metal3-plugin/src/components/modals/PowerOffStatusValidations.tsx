@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { Alert, ExpandableSection } from '@patternfly/react-core';
+import { Alert, ExpandableSection, Stack, StackItem } from '@patternfly/react-core';
 import { DaemonSetModel, PodModel } from '@console/internal/models';
 import { ResourceLink } from '@console/internal/components/utils';
 import { PodKind } from '@console/internal/module/k8s';
@@ -8,11 +8,9 @@ import { getName, getNamespace } from '@console/shared';
 import {
   NODE_STATUS_STARTING_MAINTENANCE,
   HOST_STATUS_UNKNOWN,
-  HOST_HEALTH_ERROR,
+  HOST_STATUS_ERROR,
   NODE_STATUS_STOPPING_MAINTENANCE,
 } from '../../constants';
-
-import './PowerOffStatusValidations.scss';
 
 type StatusValidationProps = {
   status: string;
@@ -133,7 +131,7 @@ export const StatusValidations: React.FC<StatusValidationProps> = ({
     });
   }
 
-  if ([HOST_STATUS_UNKNOWN, ...HOST_HEALTH_ERROR].includes(status)) {
+  if ([HOST_STATUS_UNKNOWN, ...HOST_STATUS_ERROR].includes(status)) {
     validations.push({
       title: 'The bare metal host is not healthy.',
       description: 'The host cannot be powered off gracefully untils its health is restored.',
@@ -191,13 +189,15 @@ export const StatusValidations: React.FC<StatusValidationProps> = ({
   }
 
   return (
-    <div className="metal3-poweroff-validations">
+    <Stack hasGutter>
       {validations.map((validation) => (
-        <Alert variant={validation.level} isInline title={validation.title} key={validation.title}>
-          {validation.description}
-          {validation.detail}
-        </Alert>
+        <StackItem key={validation.title}>
+          <Alert variant={validation.level} isInline title={validation.title}>
+            {validation.description}
+            {validation.detail}
+          </Alert>
+        </StackItem>
       ))}
-    </div>
+    </Stack>
   );
 };

@@ -10,6 +10,7 @@ import {
   ResourceListPage,
   ResourceDetailsPage,
   Perspective,
+  NavSection,
   YAMLTemplate,
   RoutePage,
   DashboardsOverviewHealthPrometheusSubsystem,
@@ -43,6 +44,7 @@ type ConsumedExtensions =
   | ResourceListPage
   | ResourceDetailsPage
   | Perspective
+  | NavSection
   | YAMLTemplate
   | RoutePage
   | DashboardsOverviewHealthPrometheusSubsystem
@@ -73,9 +75,17 @@ const plugin: Plugin<ConsumedExtensions> = [
     },
   },
   {
+    type: 'Nav/Section',
+    properties: {
+      id: 'home',
+      name: 'Home',
+    },
+  },
+  {
     type: 'NavItem/Href',
     properties: {
-      section: 'Home',
+      id: 'testhreflink',
+      section: 'home',
       componentProps: {
         name: 'Test Href Link',
         href: '/test',
@@ -88,7 +98,8 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/ResourceNS',
     properties: {
-      section: 'Home',
+      id: 'testresourcens',
+      section: 'home',
       componentProps: {
         name: 'Test ResourceNS Link',
         resource: 'pods',
@@ -101,7 +112,8 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/ResourceCluster',
     properties: {
-      section: 'Home',
+      id: 'testresourcecluster',
+      section: 'home',
       componentProps: {
         name: 'Test ResourceCluster Link',
         resource: 'projects',
@@ -180,6 +192,7 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/Href',
     properties: {
+      id: 'testhome',
       perspective: 'test',
       componentProps: {
         name: 'Test Home',
@@ -188,10 +201,18 @@ const plugin: Plugin<ConsumedExtensions> = [
     },
   },
   {
+    type: 'Nav/Section',
+    properties: {
+      id: 'advanced',
+      name: 'Advanced',
+    },
+  },
+  {
     type: 'NavItem/ResourceCluster',
     properties: {
+      id: 'testprojects',
       perspective: 'test',
-      section: 'Advanced',
+      section: 'advanced',
       componentProps: {
         name: 'Test Projects',
         resource: 'projects',

@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { shallow } from 'enzyme';
 import { PodKind } from '@console/internal/module/k8s';
-import { samplePods } from '@console/dev-console/src/components/topology/__tests__/topology-test-data';
+import { samplePods } from '@console/shared/src/utils/__tests__/test-resource-data';
+import { DeploymentConfigModel } from '@console/internal/models';
 import { LongArrowAltRightIcon } from '@patternfly/react-icons';
 import PodRingSet from '../PodRingSet';
 import { PodRCData } from '../../../types';
 import * as hooks from '../../../hooks';
 import PodRing from '../PodRing';
-import { DeploymentConfigModel } from '@console/internal/models';
 
 describe(PodRingSet.displayName, () => {
   let podData: PodRCData;

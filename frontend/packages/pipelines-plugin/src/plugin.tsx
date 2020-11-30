@@ -4,6 +4,7 @@ import {
   ModelDefinition,
   ModelFeatureFlag,
   KebabActions,
+  NavSection,
   HrefNavItem,
   ResourceNSNavItem,
   ResourceClusterNavItem,
@@ -29,7 +30,7 @@ import {
 import * as models from './models';
 import * as pipelineIcon from './images/pipeline.svg';
 import { pipelinesTopologyPlugin } from './topology/pipelinesTopologyPlugin';
-import { TopologyDataModelFactory } from '@console/dev-console/src/extensions/topology';
+import { TopologyDataModelFactory } from '@console/topology/src/extensions/topology';
 
 const {
   PipelineModel,
@@ -47,6 +48,7 @@ const {
 type ConsumedExtensions =
   | ModelDefinition
   | ModelFeatureFlag
+  | NavSection
   | HrefNavItem
   | ResourceClusterNavItem
   | ResourceNSNavItem
@@ -78,10 +80,13 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/ResourceNS',
     properties: {
+      id: 'pipelines',
       perspective: 'dev',
-      group: 'resources',
+      section: 'resources',
+      insertAfter: 'builds',
       componentProps: {
-        name: PipelineModel.labelPlural,
+        // t('pipelines-plugin~Pipelines')
+        name: '%pipelines-plugin~Pipelines%',
         resource: referenceForModel(PipelineModel),
         testID: 'pipeline-header',
       },
@@ -93,10 +98,12 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/Href',
     properties: {
+      id: 'pipelines',
       perspective: 'admin',
-      section: 'Pipelines',
+      section: 'pipelines',
       componentProps: {
-        name: PipelineModel.labelPlural,
+        // t('pipelines-plugin~Pipelines')
+        name: '%pipelines-plugin~Pipelines%',
         href: '/pipelines',
       },
     },
@@ -107,10 +114,12 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/Href',
     properties: {
+      id: 'pipelinetasks',
       perspective: 'admin',
-      section: 'Pipelines',
+      section: 'pipelines',
       componentProps: {
-        name: TaskModel.labelPlural,
+        // t('pipelines-plugin~Tasks')
+        name: '%pipelines-plugin~Tasks%',
         href: '/tasks',
       },
     },
@@ -121,10 +130,12 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/Href',
     properties: {
+      id: 'pipelinetriggers',
       perspective: 'admin',
-      section: 'Pipelines',
+      section: 'pipelines',
       componentProps: {
-        name: 'Triggers',
+        // t('pipelines-plugin~Triggers')
+        name: '%pipelines-plugin~Triggers%',
         href: '/triggers',
       },
     },
@@ -458,7 +469,9 @@ const plugin: Plugin<ConsumedExtensions> = [
       id: 'pipeline',
       url: `/k8s/ns/:namespace/${referenceForModel(PipelineModel)}/~new/builder`,
       label: 'Pipeline',
-      description: 'Create a Tekton Pipeline to automate delivery of your application',
+      // t('pipelines-plugin~Create a Tekton Pipeline to automate delivery of your application')
+      description:
+        '%pipelines-plugin~Create a Tekton Pipeline to automate delivery of your application~',
       icon: pipelineIcon,
       accessReview: [
         {

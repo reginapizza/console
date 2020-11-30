@@ -12,6 +12,7 @@ import { descriptionModal, vmFlavorModal } from '../modals';
 import { BootOrderModal } from '../modals/boot-order-modal/boot-order-modal';
 import dedicatedResourcesModal from '../modals/scheduling-modals/dedicated-resources-modal/connected-dedicated-resources-modal';
 import nodeSelectorModal from '../modals/scheduling-modals/node-selector-modal/connected-node-selector-modal';
+import evictionStrategyModal from '../modals/scheduling-modals/eviction-strategy-modal/eviction-strategy-modal';
 import tolerationsModal from '../modals/scheduling-modals/tolerations-modal/connected-tolerations-modal';
 import affinityModal from '../modals/scheduling-modals/affinity-modal/connected-affinity-modal';
 import { getRowsDataFromAffinity } from '../modals/scheduling-modals/affinity-modal/helpers';
@@ -28,14 +29,6 @@ import { VirtualMachineInstanceModel, VirtualMachineModel } from '../../models';
 import { asVMILikeWrapper } from '../../k8s/wrapper/utils/convert';
 import { getVMTemplate } from '../../selectors/vm-template/selectors';
 import { getFlavorText } from '../../selectors/vm/flavor-text';
-import {
-  NODE_SELECTOR_MODAL_TITLE,
-  DEDICATED_RESOURCES_PINNED,
-  DEDICATED_RESOURCES_NOT_PINNED,
-  DEDICATED_RESOURCES_MODAL_TITLE,
-  TOLERATIONS_MODAL_TITLE,
-  AFFINITY_MODAL_TITLE,
-} from '../modals/scheduling-modals/shared/consts';
 import { useGuestAgentInfo } from '../../hooks/use-guest-agent-info';
 import { GuestAgentInfoWrapper } from '../../k8s/wrapper/vm/guest-agent-info/guest-agent-info-wrapper';
 import { VMStatusBundle } from '../../statuses/vm/types';
@@ -277,6 +270,7 @@ export const VMSchedulingList: React.FC<VMSchedulingListProps> = ({
   canUpdateVM,
   kindObj,
 }) => {
+  const { t } = useTranslation();
   const isVM = kindObj === VirtualMachineModel;
   const vmiLike = isVM ? vm : vmi;
   const vmiLikeWrapper = asVMILikeWrapper(vmiLike);
@@ -295,6 +289,7 @@ export const VMSchedulingList: React.FC<VMSchedulingListProps> = ({
   });
   const isCPUPinned = vmiLikeWrapper?.isDedicatedCPUPlacement();
   const nodeSelector = vmiLikeWrapper?.getNodeSelector();
+  const evictionStrategy = vmiLikeWrapper?.getEvictionStrategy();
   const tolerationsWrapperCount = (vmiLikeWrapper?.getTolerations() || []).length;
   const affinityWrapperCount = getRowsDataFromAffinity(vmiLikeWrapper?.getAffinity())?.length;
 
@@ -304,7 +299,7 @@ export const VMSchedulingList: React.FC<VMSchedulingListProps> = ({
         <dl className="co-m-pane__details">
           <VMDetailsItem
             canEdit={canEdit}
-            title={NODE_SELECTOR_MODAL_TITLE}
+            title={t('kubevirt-plugin~Node Selector')}
             idValue={prefixedID(id, 'node-selector')}
             editButtonId={prefixedID(id, 'node-selector-edit')}
             onEditClick={() => nodeSelectorModal({ vmLikeEntity: vm, blocking: true })}
@@ -314,7 +309,7 @@ export const VMSchedulingList: React.FC<VMSchedulingListProps> = ({
 
           <VMDetailsItem
             canEdit={canEdit}
-            title={TOLERATIONS_MODAL_TITLE}
+            title={t('kubevirt-plugin~Tolerations')}
             idValue={prefixedID(id, 'tolerations')}
             editButtonId={prefixedID(id, 'tolerations-edit')}
             onEditClick={() =>
@@ -328,13 +323,13 @@ export const VMSchedulingList: React.FC<VMSchedulingListProps> = ({
             {tolerationsWrapperCount > 0 ? (
               `${tolerationsWrapperCount} Toleration rules`
             ) : (
-              <p className="text-muted">No Toleration rules</p>
+              <p className="text-muted">{t('kubevirt-plugin~No Toleration rules')}</p>
             )}
           </VMDetailsItem>
 
           <VMDetailsItem
             canEdit={canEdit}
-            title={AFFINITY_MODAL_TITLE}
+            title={t('kubevirt-plugin~Affinity Rules')}
             idValue={prefixedID(id, 'affinity')}
             editButtonId={prefixedID(id, 'affinity-edit')}
             onEditClick={() =>
@@ -344,7 +339,7 @@ export const VMSchedulingList: React.FC<VMSchedulingListProps> = ({
             {affinityWrapperCount > 0 ? (
               `${affinityWrapperCount} Affinity rules`
             ) : (
-              <p className="text-muted">No Affinity rules</p>
+              <p className="text-muted">{t('kubevirt-plugin~No Affinity rules')}</p>
             )}
           </VMDetailsItem>
         </dl>
@@ -353,7 +348,7 @@ export const VMSchedulingList: React.FC<VMSchedulingListProps> = ({
       <div className="col-sm-6">
         <dl className="co-m-pane__details">
           <VMDetailsItem
-            title="Flavor"
+            title={t('kubevirt-plugin~Flavor')}
             idValue={prefixedID(id, 'flavor')}
             canEdit={canEditWhileVMRunning}
             onEditClick={() => vmFlavorModal({ vmLike: vm, blocking: true })}
@@ -369,13 +364,29 @@ export const VMSchedulingList: React.FC<VMSchedulingListProps> = ({
           </VMDetailsItem>
 
           <VMDetailsItem
-            title={DEDICATED_RESOURCES_MODAL_TITLE}
+            title={t('kubevirt-plugin~Dedicated Resources')}
             idValue={prefixedID(id, 'dedicated-resources')}
             canEdit={canEdit}
             onEditClick={() => dedicatedResourcesModal({ vmLikeEntity: vm, blocking: true })}
             editButtonId={prefixedID(id, 'dedicated-resources-edit')}
           >
-            {isCPUPinned ? DEDICATED_RESOURCES_PINNED : DEDICATED_RESOURCES_NOT_PINNED}
+            {isCPUPinned
+              ? t('kubevirt-plugin~Workload scheduled with dedicated resources (guaranteed policy)')
+              : t('kubevirt-plugin~No Dedicated resources applied')}
+          </VMDetailsItem>
+
+          <VMDetailsItem
+            title={t('kubevirt-plugin~Eviction Strategy')}
+            idValue={prefixedID(id, 'eviction-strategy')}
+            canEdit={canEdit}
+            onEditClick={() =>
+              evictionStrategyModal({ vmLikeEntity: vm, evictionStrategy, blocking: true })
+            }
+            editButtonId={prefixedID(id, 'eviction-strategy-edit')}
+          >
+            {evictionStrategy || (
+              <p className="text-muted">{t('kubevirt-plugin~No Eviction Strategy')}</p>
+            )}
           </VMDetailsItem>
         </dl>
       </div>

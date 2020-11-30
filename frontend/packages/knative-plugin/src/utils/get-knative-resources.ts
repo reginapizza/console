@@ -15,6 +15,7 @@ import {
   KafkaModel,
   KafkaTopicModel,
   CamelIntegrationModel,
+  CamelKameletBindingModel,
 } from '../models';
 
 export type KnativeItem = {
@@ -22,6 +23,8 @@ export type KnativeItem = {
   configurations?: K8sResourceKind[];
   ksroutes?: K8sResourceKind[];
   ksservices?: K8sResourceKind[];
+  eventSources?: K8sResourceKind[];
+  eventingsubscription?: K8sResourceKind[];
   eventSourceCronjob?: K8sResourceKind[];
   eventSourceContainers?: K8sResourceKind[];
   eventSourceApiserver?: K8sResourceKind[];
@@ -300,4 +303,17 @@ export const strimziResourcesWatcher = (): WatchK8sResources<any> => {
     },
   };
   return strimziResources;
+};
+
+export const knativeCamelKameletBindingResourceWatchers = (
+  namespace: string,
+): WatchK8sResources<any> => {
+  return {
+    [CamelKameletBindingModel.plural]: {
+      isList: true,
+      kind: referenceForModel(CamelKameletBindingModel),
+      namespace,
+      optional: true,
+    },
+  };
 };

@@ -12,7 +12,6 @@ import { State, Action } from '../state';
 import { DiscoveryDonutChart } from './donut-chart';
 import {
   MINIMUM_NODES,
-  diskTypeDropdownItems,
   diskModeDropdownItems,
   allNodesSelectorTxt,
 } from '../../../../../constants';
@@ -22,11 +21,12 @@ import { RequestErrors } from '../../../install-wizard/review-and-create';
 const makeLocalVolumeSetCall = (
   state: State,
   dispatch: React.Dispatch<Action>,
-  setInProgress,
-  setErrorMessage,
+  setInProgress: React.Dispatch<React.SetStateAction<boolean>>,
+  setErrorMessage: React.Dispatch<React.SetStateAction<string>>,
+  ns: string,
 ) => {
   setInProgress(true);
-  const requestData = getLocalVolumeSetRequestData(state);
+  const requestData = getLocalVolumeSetRequestData(state, ns);
   k8sCreate(LocalVolumeSetModel, requestData)
     .then(() => {
       state.onNextClick();
@@ -39,7 +39,11 @@ const makeLocalVolumeSetCall = (
     });
 };
 
-export const CreateLocalVolumeSet: React.FC<CreateLocalVolumeSetProps> = ({ state, dispatch }) => {
+export const CreateLocalVolumeSet: React.FC<CreateLocalVolumeSetProps> = ({
+  state,
+  dispatch,
+  ns,
+}) => {
   const [inProgress, setInProgress] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState('');
   return (
@@ -50,7 +54,6 @@ export const CreateLocalVolumeSet: React.FC<CreateLocalVolumeSetProps> = ({ stat
           <LocalVolumeSetInner
             state={state}
             dispatch={dispatch}
-            diskTypeOptions={diskTypeDropdownItems}
             diskModeOptions={diskModeDropdownItems}
             allNodesHelpTxt={allNodesSelectorTxt}
           />
@@ -58,6 +61,7 @@ export const CreateLocalVolumeSet: React.FC<CreateLocalVolumeSetProps> = ({ stat
         <DiscoveryDonutChart state={state} dispatch={dispatch} />
       </div>
       <ConfirmationModal
+        ns={ns}
         state={state}
         dispatch={dispatch}
         setInProgress={setInProgress}
@@ -83,12 +87,13 @@ export const CreateLocalVolumeSet: React.FC<CreateLocalVolumeSetProps> = ({ stat
 type CreateLocalVolumeSetProps = {
   state: State;
   dispatch: React.Dispatch<Action>;
+  ns: string;
 };
 
-const ConfirmationModal = ({ state, dispatch, setInProgress, setErrorMessage }) => {
+const ConfirmationModal = ({ state, dispatch, setInProgress, setErrorMessage, ns }) => {
   const makeLVSCall = () => {
     dispatch({ type: 'setShowConfirmModal', value: false });
-    makeLocalVolumeSetCall(state, dispatch, setInProgress, setErrorMessage);
+    makeLocalVolumeSetCall(state, dispatch, setInProgress, setErrorMessage, ns);
   };
 
   const cancel = () => {

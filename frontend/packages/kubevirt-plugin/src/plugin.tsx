@@ -84,12 +84,13 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/ResourceNS',
     properties: {
-      section: 'Workloads',
+      id: 'virtualization',
+      section: 'workloads',
       componentProps: {
         name: 'Virtualization',
         resource: 'virtualization',
       },
-      mergeBefore: 'Deployments',
+      insertBefore: 'deployments',
     },
     flags: {
       required: [FLAG_KUBEVIRT],
@@ -147,6 +148,20 @@ const plugin: Plugin<ConsumedExtensions> = [
         import(
           './components/create-vm-wizard' /* webpackChunkName: "kubevirt-create-vm-wizard" */
         ).then((m) => m.CreateVMWizardPage),
+    },
+    flags: {
+      required: [FLAG_KUBEVIRT],
+    },
+  },
+  {
+    type: 'Page/Route',
+    properties: {
+      exact: true,
+      path: ['/k8s/virtualization/~new-from-template'],
+      loader: () =>
+        import(
+          './components/create-vm/create-vm' /* webpackChunkName: "kubevirt-create-vm" */
+        ).then((m) => m.CreateVM),
     },
     flags: {
       required: [FLAG_KUBEVIRT],

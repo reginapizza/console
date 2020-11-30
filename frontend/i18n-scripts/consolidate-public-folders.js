@@ -9,7 +9,7 @@ const publicFileNames = {};
 
 function processFile(fileName) {
   const language = path.basename(path.dirname(fileName));
-  if (publicFileNames[language].includes(path.basename(fileName))) {
+  if (publicFileNames[language] && publicFileNames[language].includes(path.basename(fileName))) {
     console.log(`Merging ${fileName} with matching public namespace.`);
     const file = require(fileName);
     const publicFile = path.join(
@@ -39,13 +39,7 @@ function processFile(fileName) {
 }
 
 function processLocalesFolder(filePath) {
-  if (path.basename(filePath) === 'en') {
-    common.parseFolder(filePath, processFile);
-  }
-  if (path.basename(filePath) === 'zh') {
-    common.parseFolder(filePath, processFile);
-  }
-  if (path.basename(filePath) === 'ja') {
+  if (common.isDirectory(filePath)) {
     common.parseFolder(filePath, processFile);
   }
 }
@@ -74,13 +68,7 @@ function logFiles(filePath) {
 }
 
 function processPublic(filePath) {
-  if (path.basename(filePath) === 'en') {
-    common.parseFolder(filePath, logFiles);
-  }
-  if (path.basename(filePath) === 'zh') {
-    common.parseFolder(filePath, logFiles);
-  }
-  if (path.basename(filePath) === 'ja') {
+  if (common.isDirectory(filePath)) {
     common.parseFolder(filePath, logFiles);
   }
 }

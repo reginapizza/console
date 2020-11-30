@@ -16,10 +16,10 @@ namespace ExtensionProperties {
     catalogDescription: string;
     /** Description for the catalog item type. */
     typeDescription: string;
-    /** Custom filters specific to the catalog item  */
-    filters?: CatalogFilter[];
-    /** Custom groupings specific to the catalog item */
-    groupings?: CatalogGrouping[];
+    /** Custom filters specific to the catalog item.  */
+    filters?: CatalogItemAttribute[];
+    /** Custom groupings specific to the catalog item. */
+    groupings?: CatalogItemAttribute[];
   }
 
   export interface CatalogItemProvider {
@@ -27,6 +27,9 @@ namespace ExtensionProperties {
     type: string;
     /** Fetch items and normalize it for the catalog. Value is a react effect hook. */
     provider: CodeRef<CatalogExtensionHook<CatalogItem[]>>;
+    /** Priority for this provider. Defaults to 0. Higher priority providers may override catalog
+        items provided by other providers. */
+    priority?: number;
   }
 }
 
@@ -69,7 +72,10 @@ export type CatalogItem = {
   type: string;
   name: string;
   provider?: string;
-  description?: string;
+  // Used as the tile description. If provided as a string, the description is truncated to 3 lines.
+  // If provided as a ReactNode, the contents will not be truncated.
+  // This description will also be shown in the side panel if there are no `details.descriptions`.
+  description?: string | React.ReactNode;
   tags?: string[];
   creationTimestamp?: string;
   supportUrl?: string;
@@ -101,12 +107,7 @@ export type CatalogItemDetailsDescription = {
   value: string | React.ReactNode;
 };
 
-export type CatalogFilter = {
-  label: string;
-  attribute: string;
-};
-
-export type CatalogGrouping = {
+export type CatalogItemAttribute = {
   label: string;
   attribute: string;
 };

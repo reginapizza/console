@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { getBadgeFromType } from '@console/shared';
 import { referenceForModel } from '@console/internal/module/k8s';
 import { Firehose } from '@console/internal/components/utils';
@@ -12,7 +13,8 @@ interface PipelinesResourceListProps extends React.ComponentProps<typeof FireMan
 }
 
 const PipelinesResourceList: React.FC<PipelinesResourceListProps> = (props) => {
-  const { namespace, showTitle = true } = props;
+  const { t } = useTranslation();
+  const { namespace, showTitle = true, selector, name } = props;
 
   const resources = [
     {
@@ -21,6 +23,8 @@ const PipelinesResourceList: React.FC<PipelinesResourceListProps> = (props) => {
       namespace,
       prop: PipelineModel.id,
       filters: { ...filters },
+      selector,
+      name,
     },
   ];
 
@@ -28,21 +32,23 @@ const PipelinesResourceList: React.FC<PipelinesResourceListProps> = (props) => {
     <FireMan
       {...props}
       canCreate
-      createButtonText={`Create ${PipelineModel.label}`}
+      createButtonText={t('pipelines-plugin~Create {{PipelineModel.label}}', {
+        pipeline: PipelineModel.label,
+      })}
       createProps={{
         to: namespace
           ? `/k8s/ns/${namespace}/${referenceForModel(PipelineModel)}/~new/builder`
           : `/k8s/cluster/${referenceForModel(PipelineModel)}/~new`,
       }}
       createAccessReview={{ model: PipelineModel, namespace }}
-      filterLabel="by name"
+      filterLabel={t('pipelines-plugin~by name')}
       textFilter="name"
       resources={resources}
       title={showTitle ? PipelineModel.labelPlural : null}
       badge={getBadgeFromType(PipelineModel.badge)}
     >
       <Firehose resources={resources}>
-        <PipelineAugmentRunsWrapper />
+        <PipelineAugmentRunsWrapper hideNameLabelFilters={props.hideNameLabelFilters} />
       </Firehose>
     </FireMan>
   );

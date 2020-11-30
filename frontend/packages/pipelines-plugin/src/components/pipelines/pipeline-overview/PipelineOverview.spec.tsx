@@ -3,6 +3,16 @@ import { shallow } from 'enzyme';
 import PipelineOverview from './PipelineOverview';
 import PipelineStartButton from './PipelineStartButton';
 import TriggerLastRunButton from './TriggerLastRunButton';
+import { setPipelineNotStarted } from './pipeline-overview-utils';
+import PipelineOverviewAlert from './PipelineOverviewAlert';
+
+jest.mock('react-i18next', () => {
+  const reactI18next = require.requireActual('react-i18next');
+  return {
+    ...reactI18next,
+    useTranslation: () => ({ t: (key) => key }),
+  };
+});
 
 describe('Pipeline sidebar overview', () => {
   let props: React.ComponentProps<typeof PipelineOverview>;
@@ -22,7 +32,7 @@ describe('Pipeline sidebar overview', () => {
       metadata: { name: pr, namespace: 'test' },
     }));
     const wrapper = shallow(<PipelineOverview {...props} />);
-    expect(wrapper.find('Link').text()).toBe('View all (4)');
+    expect(wrapper.find('Link').text()).toBe('pipelines-plugin~View all {{pipelineRunsLength}}');
   });
 
   it('should show not view all link if there exactly MAX_VISIBLE pipelineruns', () => {
@@ -42,5 +52,19 @@ describe('Pipeline sidebar overview', () => {
     props.item.pipelineRuns = [{ metadata: { name: 'pipelinerun', namespace: 'test' } }];
     const wrapper = shallow(<PipelineOverview {...props} />);
     expect(wrapper.find(TriggerLastRunButton)).toHaveLength(1);
+  });
+
+  it('should show the pipeline not started Alert', () => {
+    const { name, namespace } = props.item.pipelines[0].metadata;
+    setPipelineNotStarted(name, namespace);
+    const wrapper = shallow(<PipelineOverview {...props} />);
+    expect(wrapper.find(PipelineOverviewAlert)).toHaveLength(1);
+    sessionStorage.clear();
+  });
+
+  it('should not show the pipeline not started Alert', () => {
+    sessionStorage.clear();
+    const wrapper = shallow(<PipelineOverview {...props} />);
+    expect(wrapper.find(PipelineOverviewAlert)).toHaveLength(0);
   });
 });

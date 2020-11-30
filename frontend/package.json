@@ -38,7 +38,7 @@
     "cypress-merge": "mochawesome-merge ./gui_test_screenshots/cypress_report*.json > ./gui_test_screenshots/cypress.json",
     "cypress-generate": "marge -o ./gui_test_screenshots/ -f cypress-report -t 'OpenShift Console Cypress Test Results' -p 'OpenShift Cypress Test Results' --showPassed false --assetsDir ./gui_test_screenshots/cypress/assets ./gui_test_screenshots/cypress.json",
     "cypress-a11y-report": "echo '\nA11y Test Results:' && mv packages/integration-tests-cypress/cypress-a11y-report.json ./gui_test_screenshots/ && node -e \"console.table(JSON.parse(require('fs').readFileSync(process.argv[1])));\" ./gui_test_screenshots/cypress-a11y-report.json",
-    "cypress-postreport": "yarn cypress-merge && yarn cypress-generate && yarn cypress-a11y-report",
+    "cypress-postreport": "yarn cypress-merge && yarn cypress-generate",
     "analyze": "NODE_ENV=production NODE_OPTIONS=--max-old-space-size=4096 yarn ts-node ./node_modules/.bin/webpack --mode=production --profile --json | sed '0,/^{/s/^[^{].*//g' > public/dist/stats.json && yarn ts-node ./node_modules/.bin/webpack-bundle-analyzer --mode static -r public/dist/report.html public/dist/stats.json",
     "prettier-all": "prettier --write '**/*.{js,jsx,ts,tsx,json}'",
     "ts-node": "ts-node -O '{\"module\":\"commonjs\"}'",
@@ -186,7 +186,7 @@
     "vscode-languageserver-types": "^3.10.0",
     "whatwg-fetch": "2.x",
     "xterm": "^3.12.2",
-    "yaml-language-server": "0.10.1",
+    "yaml-language-server": "0.13.0",
     "yup": "^0.27.0"
   },
   "devDependencies": {
@@ -290,7 +290,7 @@
     "webpack-bundle-analyzer": "^3.5.0",
     "webpack-cli": "^3.3.9",
     "webpack-dev-server": "^3.11.0",
-    "webpack-virtual-modules": "^0.1.10"
+    "webpack-virtual-modules": "0.3.x"
   },
   "engines": {
     "node": ">=10.x"

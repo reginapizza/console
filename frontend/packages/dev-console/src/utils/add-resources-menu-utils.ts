@@ -1,9 +1,9 @@
 import { K8sResourceKind, referenceFor } from '@console/internal/module/k8s';
 import { KebabOption } from '@console/internal/components/utils';
+import { UNASSIGNED_KEY } from '@console/topology/src/const';
 import { ImportOptions } from '../components/import/import-types';
 import {
   QUERY_PROPERTIES,
-  UNASSIGNED_KEY,
   INCONTEXT_ACTIONS_CONNECTS_TO,
   INCONTEXT_ACTIONS_SERVICE_BINDING,
 } from '../const';
@@ -64,7 +64,7 @@ export const getAddPageUrl = (
       break;
     case ImportOptions.OPERATORBACKED:
       pageUrl = `/catalog/ns/${ns}`;
-      params.append('kind', JSON.stringify(['ClusterServiceVersion']));
+      params.append('catalogType', 'OperatorBackedService');
       contextSource &&
         params.append(
           QUERY_PROPERTIES.CONTEXT_ACTION,
@@ -76,7 +76,7 @@ export const getAddPageUrl = (
       break;
     case ImportOptions.HELMCHARTS:
       pageUrl = `/catalog/ns/${ns}`;
-      params.append('kind', JSON.stringify(['HelmChart']));
+      params.append('catalogType', 'HelmChart');
       break;
     case ImportOptions.SAMPLES:
       pageUrl = `/samples/ns/${ns}`;

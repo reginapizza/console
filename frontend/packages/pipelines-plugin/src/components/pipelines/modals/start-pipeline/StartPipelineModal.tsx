@@ -1,10 +1,12 @@
 import * as React from 'react';
 import { Formik } from 'formik';
+import { useTranslation } from 'react-i18next';
 import {
   createModalLauncher,
   ModalComponentProps,
 } from '@console/internal/components/factory/modal';
 import { errorModal } from '@console/internal/components/modals';
+import { LoadingBox } from '@console/internal/components/utils';
 import { Pipeline, PipelineRun } from '../../../../utils/pipeline-augment';
 import { useUserAnnotationForManualStart } from '../../../pipelineruns/triggered-by';
 import ModalStructure from '../common/ModalStructure';
@@ -13,6 +15,7 @@ import { startPipelineSchema } from '../common/validation-utils';
 import StartPipelineForm from './StartPipelineForm';
 import { submitStartPipeline } from './submit-utils';
 import { StartPipelineFormValues } from './types';
+import { usePipelinePVC } from '../../hooks';
 
 export interface StartPipelineModalProps {
   pipeline: Pipeline;
@@ -23,10 +26,19 @@ const StartPipelineModal: React.FC<StartPipelineModalProps & ModalComponentProps
   close,
   onSubmit,
 }) => {
+  const { t } = useTranslation();
   const userStartedAnnotation = useUserAnnotationForManualStart();
+  const [pipelinePVC, pipelinePVCLoaded] = usePipelinePVC(
+    pipeline.metadata?.name,
+    pipeline.metadata?.namespace,
+  );
+
+  if (!pipelinePVCLoaded) {
+    return <LoadingBox />;
+  }
 
   const initialValues: StartPipelineFormValues = {
-    ...convertPipelineToModalData(pipeline),
+    ...convertPipelineToModalData(pipeline, false, pipelinePVC?.metadata?.name),
     secretOpen: false,
   };
 
@@ -51,10 +63,15 @@ const StartPipelineModal: React.FC<StartPipelineModalProps & ModalComponentProps
     <Formik
       initialValues={initialValues}
       onSubmit={handleSubmit}
-      validationSchema={startPipelineSchema}
+      validationSchema={startPipelineSchema(t)}
     >
       {(formikProps) => (
-        <ModalStructure submitBtnText="Start" title="Start Pipeline" close={close} {...formikProps}>
+        <ModalStructure
+          submitBtnText={t('pipelines-plugin~Start')}
+          title={t('pipelines-plugin~Start Pipeline')}
+          close={close}
+          {...formikProps}
+        >
           <StartPipelineForm {...formikProps} />
         </ModalStructure>
       )}

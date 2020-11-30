@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
+import { useTranslation } from 'react-i18next';
 import { Stack, StackItem, Card, CardTitle, SplitItem, Split, Label } from '@patternfly/react-core';
 import { ExternalLink, ResourceIcon } from '@console/internal/components/utils';
 import { ConsoleLinkModel } from '@console/internal/models';
@@ -15,6 +16,7 @@ interface GitOpsDetailsProps {
 }
 
 const GitOpsDetails: React.FC<GitOpsDetailsProps> = ({ envs, appName }) => {
+  const { t } = useTranslation();
   const [consoleLinks] = useK8sWatchResource<K8sResourceKind[]>({
     isList: true,
     kind: referenceForModel(ConsoleLinkModel),
@@ -65,7 +67,7 @@ const GitOpsDetails: React.FC<GitOpsDetailsProps> = ({ envs, appName }) => {
                           />
                         ) : (
                           <div className="odc-gitops-details__env-section__url-empty-state">
-                            Cluster URL not available
+                            {t('devconsole~Cluster URL not available')}
                           </div>
                         )}
                       </StackItem>

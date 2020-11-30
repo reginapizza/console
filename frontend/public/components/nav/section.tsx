@@ -32,12 +32,30 @@ const navSectionStateToProps = (
   };
 };
 
+const findChildIndex = (id: string, Children: React.ReactElement[]) =>
+  Children.findIndex((c) => c.props.id === id);
+
 const mergePluginChild = (
   Children: React.ReactElement[],
   pluginChild: React.ReactElement,
-  mergeBefore?: string,
+  insertBefore?: string | string[],
+  insertAfter?: string | string[],
 ) => {
-  const index = Children.findIndex((c) => c.props.name === mergeBefore);
+  let index = -1;
+  const before = Array.isArray(insertBefore) ? insertBefore : [insertBefore];
+  const after = Array.isArray(insertAfter) ? insertAfter : [insertAfter];
+  let count = 0;
+  while (count < before.length && index < 0) {
+    index = findChildIndex(before[count++], Children);
+  }
+  count = 0;
+  while (count < after.length && index < 0) {
+    index = findChildIndex(after[count++], Children);
+    if (index >= 0) {
+      index += 1;
+    }
+  }
+
   if (index >= 0) {
     Children.splice(index, 0, pluginChild);
   } else {
@@ -121,7 +139,7 @@ export const NavSection = connect(navSectionStateToProps)(
         this.setState({ isOpen: expandState });
       };
 
-      getNavItemExtensions = (perspective: string, title: string) => {
+      getNavItemExtensions = (perspective: string, title: string, id: string) => {
         const { navItemExtensions, perspectiveExtensions } = this.props;
 
         const defaultPerspective = _.find(perspectiveExtensions, (p) => p.properties.default);
@@ -134,7 +152,7 @@ export const NavSection = connect(navSectionStateToProps)(
             // or if no perspective specified, are we in the default perspective
             (item.properties.perspective === perspective ||
               (!item.properties.perspective && isDefaultPerspective)) &&
-            (item.properties.section === title || item.properties.group === title),
+            item.properties.section === id,
         );
       };
 
@@ -168,13 +186,18 @@ export const NavSection = connect(navSectionStateToProps)(
       };
 
       getChildren() {
-        const { title, children, perspective } = this.props;
+        const { id, title, children, perspective } = this.props;
         const Children = React.Children.map(children, this.mapChild) || [];
 
-        this.getNavItemExtensions(perspective, title).forEach((item) => {
+        this.getNavItemExtensions(perspective, title, id).forEach((item) => {
           const pluginChild = this.mapChild(createLink(item));
           if (pluginChild) {
-            mergePluginChild(Children, pluginChild, item.properties.mergeBefore);
+            mergePluginChild(
+              Children,
+              pluginChild,
+              item.properties.insertBefore,
+              item.properties.insertAfter,
+            );
           }
         });
 
@@ -246,6 +269,7 @@ type NavSectionExtensionProps = {
 };
 
 type NavSectionProps = {
+  id: string;
   title: NavSectionTitle | string;
   isGrouped?: boolean;
   required?: string;

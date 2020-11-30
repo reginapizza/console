@@ -27,7 +27,6 @@ import { fetchK8s } from '@console/internal/graphql/client';
 import { LocalVolumeDiscovery } from '@console/local-storage-operator-plugin/src/models';
 import { getDiscoveryRequestData } from '@console/local-storage-operator-plugin/src/components/auto-detect-volume/discovery-request-data';
 import {
-  LOCAL_STORAGE_NAMESPACE,
   DISCOVERY_CR_NAME,
   HOSTNAME_LABEL_KEY,
   LABEL_OPERATOR,
@@ -38,10 +37,8 @@ import {
   getLabelIndex,
   getHostNames,
 } from '@console/local-storage-operator-plugin/src/utils';
-import {
-  DiskMechanicalProperties,
-  DiskType,
-} from '@console/local-storage-operator-plugin/src/components/local-volume-set/types';
+import { DiskType } from '@console/local-storage-operator-plugin/src/components/local-volume-set/types';
+import { OCS_ATTACHED_DEVICES_FLAG } from '@console/local-storage-operator-plugin/src/features';
 import { initialState, reducer, State, Action, Discoveries, OnNextClick } from './state';
 import { AutoDetectVolume } from './wizard-pages/auto-detect-volume';
 import { CreateLocalVolumeSet } from './wizard-pages/create-local-volume-set';
@@ -60,12 +57,7 @@ import { getName } from '@console/shared';
 import { StorageClusterKind } from '../../../../types';
 import { getOCSRequestData, labelNodes } from '../../ocs-request-data';
 import { OCSServiceModel } from '../../../../models';
-import {
-  OCS_ATTACHED_DEVICES_FLAG,
-  OCS_CONVERGED_FLAG,
-  OCS_INDEPENDENT_FLAG,
-  OCS_FLAG,
-} from '../../../../features';
+import { OCS_CONVERGED_FLAG, OCS_INDEPENDENT_FLAG, OCS_FLAG } from '../../../../features';
 import { ReviewAndCreate } from './wizard-pages/review-and-create-step';
 import { Configure } from './wizard-pages/configure-step';
 import '../../install-wizard/install-wizard.scss';
@@ -74,6 +66,7 @@ const makeAutoDiscoveryCall = (
   onNext: OnNextClick,
   state: State,
   dispatch: React.Dispatch<Action>,
+  ns: string,
 ) => {
   dispatch({ type: 'setIsLoading', value: true });
   const selectedNodes = getNodes(
@@ -82,7 +75,7 @@ const makeAutoDiscoveryCall = (
     state.nodeNamesForLVS,
   );
 
-  fetchK8s(LocalVolumeDiscovery, DISCOVERY_CR_NAME, LOCAL_STORAGE_NAMESPACE)
+  fetchK8s(LocalVolumeDiscovery, DISCOVERY_CR_NAME, ns)
     .then((discoveryRes: K8sResourceKind) => {
       const nodeSelectorTerms = discoveryRes?.spec?.nodeSelector?.nodeSelectorTerms;
       const [selectorIndex, expIndex] = nodeSelectorTerms
@@ -112,7 +105,7 @@ const makeAutoDiscoveryCall = (
       if (err.message === AUTO_DISCOVER_ERR_MSG) {
         throw err;
       }
-      const requestData = getDiscoveryRequestData(state);
+      const requestData = getDiscoveryRequestData({ ...state, ns });
       return k8sCreate(LocalVolumeDiscovery, requestData);
     })
     .then(() => {
@@ -126,7 +119,7 @@ const makeAutoDiscoveryCall = (
     });
 };
 
-const CreateSC: React.FC<CreateSCProps> = ({ match, hasNoProvSC }) => {
+const CreateSC: React.FC<CreateSCProps> = ({ match, hasNoProvSC, mode, lsoNs }) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const [discoveriesData, discoveriesLoaded, discoveriesLoadError] = useK8sWatchResource<
     K8sResourceKind[]
@@ -153,7 +146,6 @@ const CreateSC: React.FC<CreateSCProps> = ({ match, hasNoProvSC }) => {
             // filter out non supported disks
             if (
               discovery?.status?.state === AVAILABLE &&
-              discovery.property === DiskMechanicalProperties.SSD &&
               (discovery.type === DiskType.RawDisk || discovery.type === DiskType.Partition)
             ) {
               discovery.node = name;
@@ -192,7 +184,7 @@ const CreateSC: React.FC<CreateSCProps> = ({ match, hasNoProvSC }) => {
     {
       id: CreateStepsSC.STORAGECLASS,
       name: 'Create Storage Class',
-      component: <CreateLocalVolumeSet dispatch={dispatch} state={state} />,
+      component: <CreateLocalVolumeSet dispatch={dispatch} state={state} ns={lsoNs} />,
     },
     {
       id: CreateStepsSC.STORAGEANDNODES,
@@ -202,7 +194,7 @@ const CreateSC: React.FC<CreateSCProps> = ({ match, hasNoProvSC }) => {
     {
       id: CreateStepsSC.CONFIGURE,
       name: 'Configure',
-      component: <Configure dispatch={dispatch} state={state} />,
+      component: <Configure dispatch={dispatch} state={state} mode={mode} />,
     },
     {
       id: CreateStepsSC.REVIEWANDCREATE,
@@ -225,7 +217,13 @@ const CreateSC: React.FC<CreateSCProps> = ({ match, hasNoProvSC }) => {
         if (state.filteredNodes.length < MINIMUM_NODES) return true;
         return !state.volumeSetName.trim().length;
       case CreateStepsSC.REVIEWANDCREATE:
-        return state.nodes.length < MINIMUM_NODES || !getName(state.storageClass);
+        return (
+          state.nodes.length < MINIMUM_NODES ||
+          !getName(state.storageClass) ||
+          !state.encryption.hasHandled
+        );
+      case CreateStepsSC.CONFIGURE:
+        return !state.encryption.hasHandled;
       default:
         return false;
     }
@@ -235,11 +233,11 @@ const CreateSC: React.FC<CreateSCProps> = ({ match, hasNoProvSC }) => {
     const { appName, ns } = match.params;
     try {
       setInProgress(true);
-      const { storageClass, enableEncryption, nodes, enableMinimal } = state;
+      const { storageClass, encryption, nodes, enableMinimal } = state;
       const storageCluster: StorageClusterKind = getOCSRequestData(
         storageClass,
         defaultRequestSize.BAREMETAL,
-        enableEncryption,
+        encryption.clusterWide,
         enableMinimal,
       );
       await Promise.all(labelNodes(nodes)).then(() => k8sCreate(OCSServiceModel, storageCluster));
@@ -263,7 +261,7 @@ const CreateSC: React.FC<CreateSCProps> = ({ match, hasNoProvSC }) => {
     // TODO: Need to think of a way to remove this
     dispatch({ type: 'setOnNextClick', value: onNext });
     if (activeStep.id === CreateStepsSC.DISCOVER) {
-      makeAutoDiscoveryCall(onNext, state, dispatch);
+      makeAutoDiscoveryCall(onNext, state, dispatch, lsoNs);
     } else if (activeStep.id === CreateStepsSC.STORAGECLASS) {
       dispatch({ type: 'setShowConfirmModal', value: true });
     } else if (activeStep.id === CreateStepsSC.REVIEWANDCREATE) {
@@ -336,6 +334,8 @@ type CreateSCProps = {
   match: RouterMatch<{ appName: string; ns: string }>;
   hasNoProvSC: boolean;
   setHasNoProvSC: React.Dispatch<React.SetStateAction<boolean>>;
+  mode: string;
+  lsoNs: string;
 };
 
 export default CreateSC;

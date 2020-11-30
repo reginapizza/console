@@ -1,26 +1,25 @@
 import * as _ from 'lodash';
 import * as k8s from '@console/internal/module/k8s';
-import { getPodStatus, podStatus, ALL_APPLICATIONS_KEY } from '@console/shared';
 import { Model, NodeModel, EdgeModel } from '@patternfly/react-topology';
+import { ALL_APPLICATIONS_KEY } from '@console/shared';
+import { MockBaseResources } from '@console/shared/src/utils/__tests__/test-resource-data';
 import {
-  baseDataModelGetter,
-  getFilterById,
-  getWorkloadResources,
+  OdcNodeModel,
+  TopologyDataModelDepicted,
   TopologyDataResources,
-  updateModelFromFilters,
-  WORKLOAD_TYPES,
   WorkloadData,
+} from '@console/topology/src/topology-types';
+import { getWorkloadResources } from '@console/topology/src/data-transforms/transform-utils';
+import { cleanUpWorkload, WORKLOAD_TYPES } from '@console/topology/src/utils';
+import { baseDataModelGetter } from '@console/topology/src/data-transforms/data-transformer';
+import {
   DEFAULT_TOPOLOGY_FILTERS,
   EXPAND_GROUPS_FILTER_ID,
   SHOW_GROUPS_FILTER_ID,
-  TopologyDataModelDepicted,
-  OdcNodeModel,
-} from '@console/dev-console/src/components/topology';
-import {
-  MockBaseResources,
-  TEST_KINDS_MAP,
-} from '@console/dev-console/src/components/topology/__tests__/topology-test-data';
-import { cleanUpWorkload } from '@console/dev-console/src/utils/application-utils';
+  getFilterById,
+} from '@console/topology/src/filters';
+import { updateModelFromFilters } from '@console/topology/src/data-transforms/updateModelFromFilters';
+import { TEST_KINDS_MAP } from '@console/topology/src/__tests__/topology-test-data';
 import * as utils from '@console/internal/components/utils';
 import { getKnativeTopologyDataModel } from '../data-transformer';
 import {
@@ -89,16 +88,6 @@ describe('knative data transformer ', () => {
     mockResources = _.cloneDeep(MockKnativeResources);
   });
 
-  it('should return a valid pod status for scale to 0', async () => {
-    const graphData = await getTransformedTopologyData(mockResources);
-    const status = getPodStatus(
-      (getNodeById('02c34a0e-9638-11e9-b134-06a61d886b62', graphData).data.data as WorkloadData)
-        .donutStatus.pods[0],
-    );
-    expect(podStatus.includes(status)).toBe(true);
-    expect(status).toEqual('Autoscaled to 0');
-  });
-
   it('should return true for knative resource', async () => {
     const graphData = await getTransformedTopologyData(mockResources);
     expect((graphData.nodes[0].data.data as WorkloadData).isKnativeResource).toBeTruthy();
@@ -154,7 +143,7 @@ describe('knative data transformer ', () => {
     const graphData = await getTransformedTopologyData(mockResources);
     const node = graphData.nodes.find(
       (n) => (n as OdcNodeModel).resource.metadata.name === 'overlayimage',
-    );
+    ) as OdcNodeModel;
 
     const spy = spyOn(k8s, 'k8sKill');
     const checkAccessSpy = spyOn(utils, 'checkAccess');
@@ -163,7 +152,7 @@ describe('knative data transformer ', () => {
     spyAndReturn(checkAccessSpy)(Promise.resolve({ status: { allowed: true } }));
     spyAndReturn(spyK8sList)(Promise.resolve([]));
 
-    cleanUpWorkload(node)
+    cleanUpWorkload(node.resource, true)
       .then(() => {
         const allArgs = spy.calls.allArgs();
         const removedModels = allArgs.map((arg) => arg[0]);

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   AlertVariant,
@@ -32,16 +33,9 @@ import {
 import {
   getDefaultSCAccessModes,
   getDefaultSCVolumeMode,
-  getGefaultStorageClass,
+  getDefaultStorageClass,
 } from '../../../selectors/config-map/sc-defaults';
-import {
-  ADD,
-  DYNAMIC,
-  EDIT,
-  getDialogUIError,
-  getSequenceName,
-  SAVE,
-} from '../../../utils/strings';
+import { DYNAMIC, getDialogUIError, getSequenceName } from '../../../utils/strings';
 import { ModalFooter } from '../modal/modal-footer';
 import { useShowErrorToggler } from '../../../hooks/use-show-error-toggler';
 import { DiskWrapper } from '../../../k8s/wrapper/vm/disk-wrapper';
@@ -57,11 +51,14 @@ import { PersistentVolumeClaimWrapper } from '../../../k8s/wrapper/vm/persistent
 import { BinaryUnit, stringValueUnitSplit } from '../../form/size-unit-utils';
 import { StorageUISource } from './storage-ui-source';
 import { TemplateValidations } from '../../../utils/validations/template/template-validations';
-import { ConfigMapKind } from '@console/internal/module/k8s';
+import {
+  ConfigMapKind,
+  StorageClassResourceKind,
+  PersistentVolumeClaimKind,
+} from '@console/internal/module/k8s';
 import { UIStorageEditConfig } from '../../../types/ui/storage';
 import { isFieldDisabled } from '../../../utils/ui/edit-config';
 import { PendingChangesAlert } from '../../Alerts/PendingChangesAlert';
-import { MODAL_RESTART_IS_REQUIRED } from '../../../strings/vm/status';
 import { FormPFSelect } from '../../form/form-pf-select';
 
 import './disk-modal.scss';
@@ -92,6 +89,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
     editConfig,
     isVMRunning,
   } = props;
+  const { t } = useTranslation();
   const inProgress = _inProgress || !isLoaded(_storageClassConfigMap);
   const isDisabled = (fieldName: string, disabled?: boolean) =>
     inProgress || disabled || isFieldDisabled(editConfig, fieldName);
@@ -167,7 +165,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
       let defaultStorageClass = null;
 
       if (!storageClassName) {
-        defaultStorageClass = getGefaultStorageClass(getLoadedData(storageClasses, []));
+        defaultStorageClass = getDefaultStorageClass(getLoadedData(storageClasses, []));
 
         if (defaultStorageClass) {
           setStorageClassName(getName(defaultStorageClass) || '');
@@ -337,8 +335,8 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
     setAdvancedDrawerIsOpen(!advancedDrawerIsOpen);
   };
 
-  const onTypeChanged = (t) => {
-    const newType = DiskType.fromString(t);
+  const onTypeChanged = (diskType) => {
+    const newType = DiskType.fromString(diskType);
     setType(newType);
     if (newType === DiskType.CDROM && source === StorageUISource.BLANK) {
       onSourceChanged(null, StorageUISource.URL.getValue());
@@ -350,12 +348,19 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
   return (
     <div className="modal-content">
       <ModalTitle>
-        {isEditing ? EDIT : ADD} {type.toString()}
+        {isEditing ? t('kubevirt-plugin~Edit') : t('kubevirt-plugin~Add')}{' '}
+        {t('kubevirt-plugin~{{type}}', { type: type.toString() })}
       </ModalTitle>
       <ModalBody>
-        {isVMRunning && <PendingChangesAlert warningMsg={MODAL_RESTART_IS_REQUIRED} />}
+        {isVMRunning && (
+          <PendingChangesAlert
+            warningMsg={t(
+              'kubevirt-plugin~The changes you are making require this virtual machine to be updated. Restart this VM to apply these changes.',
+            )}
+          />
+        )}
         <Form>
-          <FormRow title="Source" fieldId={asId('source')} isRequired>
+          <FormRow title={t('kubevirt-plugin~Source')} fieldId={asId('source')} isRequired>
             <FormPFSelect
               menuAppendTo={() => document.body}
               isDisabled={isDisabled('source', !source.canBeChangedToThisSource(type))}
@@ -384,7 +389,12 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
             </FormPFSelect>
           </FormRow>
           {source.requiresURL() && (
-            <FormRow title="URL" fieldId={asId('url')} isRequired validation={urlValidation}>
+            <FormRow
+              title={t('kubevirt-plugin~URL')}
+              fieldId={asId('url')}
+              isRequired
+              validation={urlValidation}
+            >
               <TextInput
                 validated={!isValidationError(urlValidation) ? 'default' : 'error'}
                 key="url"
@@ -398,7 +408,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
           )}
           {source.requiresContainerImage() && (
             <FormRow
-              title="Container"
+              title={t('kubevirt-plugin~Container')}
               fieldId={asId('container')}
               isRequired
               validation={containerValidation}
@@ -446,7 +456,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
             />
           )}
           <FormRow
-            title="Name"
+            title={t('kubevirt-plugin~Name')}
             fieldId={asId('name')}
             isRequired
             isLoading={!usedDiskNames}
@@ -464,6 +474,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
 
           {source.requiresSize() && (
             <SizeUnitFormRow
+              title={t('kubevirt-plugin~Size')}
               key="size-row"
               id={asId('size-row')}
               size={size}
@@ -484,7 +495,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
             />
           )}
           {!source.requiresSize() && source.hasDynamicSize() && (
-            <FormRow title="Size" fieldId={asId('dynamic-size-row')}>
+            <FormRow title={t('kubevirt-plugin~Size')} fieldId={asId('dynamic-size-row')}>
               <TextInput
                 key="dynamic-size-row"
                 isDisabled
@@ -494,7 +505,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
             </FormRow>
           )}
           <FormRow
-            title="Interface"
+            title={t('kubevirt-plugin~Interface')}
             fieldId={asId('interface')}
             isRequired
             validation={busValidation}
@@ -517,29 +528,42 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
                 >
                   {b.toString()}
                   {recommendedBuses.size !== validAllowedBuses.size && recommendedBuses.has(b)
-                    ? ' --- Recommended ---'
+                    ? t('kubevirt-plugin~ --- Recommended ---')
                     : ''}
                 </SelectOption>
               ))}
             </FormPFSelect>
           </FormRow>
-          <FormRow title="Type" fieldId={asId('type')} validation={typeValidation} isRequired>
+          <FormRow
+            title={t('kubevirt-plugin~Type')}
+            fieldId={asId('type')}
+            validation={typeValidation}
+            isRequired
+          >
             <FormSelect
               onChange={onTypeChanged}
               value={asFormSelectValue(type.getValue())}
               id={asId('type')}
               isDisabled={isDisabled('type')}
             >
-              <FormSelectPlaceholderOption isDisabled placeholder="--- Select Type ---" />
+              <FormSelectPlaceholderOption
+                isDisabled
+                placeholder={t('kubevirt-plugin~--- Select Type ---')}
+              />
               {DiskType.getAll()
                 .filter((dtype) => !dtype.isDeprecated() || dtype === type)
-                .map((t) => (
-                  <FormSelectOption key={t.getValue()} value={t.getValue()} label={t.toString()} />
+                .map((dt) => (
+                  <FormSelectOption
+                    key={dt.getValue()}
+                    value={dt.getValue()}
+                    label={dt.toString()}
+                  />
                 ))}
             </FormSelect>
           </FormRow>
           {source.requiresStorageClass() && (
             <K8sResourceSelectRow
+              title={t('kubevirt-plugin~Storage Class')}
               key="storage-class"
               id={asId('storage-class')}
               isDisabled={isDisabled('storageClass') || isStorageClassDataLoading}
@@ -550,7 +574,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
               onChange={(sc) => onStorageClassNameChanged(sc || '')}
               getResourceLabel={(sc) =>
                 getAnnotations(sc, {})[DEFAULT_SC_ANNOTATION] === 'true'
-                  ? `${getName(sc)} (default)`
+                  ? t('kubevirt-plugin~{{name}} (default)', { name: getName(sc) })
                   : getName(sc)
               }
             />
@@ -559,18 +583,20 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
             <Alert
               variant={AlertVariant.warning}
               isInline
-              title="PVC will be created on template creation and used by VMs created from this template."
+              title={t(
+                'kubevirt-plugin~PVC will be created on template creation and used by VMs created from this template.',
+              )}
             />
           )}
           {source.requiresVolumeModeOrAccessModes() && (
             <ExpandableSection
-              toggleText="Advanced"
+              toggleText={t('kubevirt-plugin~Advanced')}
               isExpanded={advancedDrawerIsOpen}
               onToggle={onToggleAdvancedDrawer}
               className="disk-advanced-drawer"
             >
               {source.requiresVolumeMode() && (
-                <FormRow title="Volume Mode" fieldId={asId('volume-mode')}>
+                <FormRow title={t('kubevirt-plugin~Volume Mode')} fieldId={asId('volume-mode')}>
                   <FormSelect
                     onChange={(vMode) => setVolumeMode(VolumeMode.fromString(vMode))}
                     value={asFormSelectValue(volumeMode?.getValue())}
@@ -579,7 +605,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
                   >
                     <FormSelectPlaceholderOption
                       isDisabled={inProgress}
-                      placeholder="--- Select Volume Mode ---"
+                      placeholder={t('kubevirt-plugin~--- Select Volume Mode ---')}
                     />
                     {VolumeMode.getAll().map((v) => (
                       <FormSelectOption
@@ -593,7 +619,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
               )}
               {source.requiresAccessModes() && (
                 <FormRow
-                  title="Access Mode"
+                  title={t('kubevirt-plugin~Access Mode')}
                   fieldId={asId('access-mode')}
                   className="disk-access-mode"
                 >
@@ -605,7 +631,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
                   >
                     <FormSelectPlaceholderOption
                       isDisabled={inProgress}
-                      placeholder="--- Select Access Mode ---"
+                      placeholder={t('kubevirt-plugin~--- Select Access Mode ---')}
                     />
                     {AccessMode.getAll().map((a) => (
                       <FormSelectOption
@@ -623,7 +649,7 @@ export const DiskModal = withHandlePromise((props: DiskModalProps) => {
       </ModalBody>
       <ModalFooter
         id="disk"
-        submitButtonText={isEditing ? SAVE : ADD}
+        submitButtonText={isEditing ? t('kubevirt-plugin~Save') : t('kubevirt-plugin~Add')}
         errorMessage={errorMessage || (showUIError ? getDialogUIError(hasAllRequiredFilled) : null)}
         isDisabled={inProgress}
         inProgress={inProgress}
@@ -655,8 +681,8 @@ export type DiskModalProps = {
     persistentVolumeClaim: PersistentVolumeClaimWrapper,
   ) => Promise<any>;
   namespaces?: FirehoseResult;
-  storageClasses?: FirehoseResult;
-  persistentVolumeClaims?: FirehoseResult;
+  storageClasses?: FirehoseResult<StorageClassResourceKind[]>;
+  persistentVolumeClaims?: FirehoseResult<PersistentVolumeClaimKind[]>;
   vmName: string;
   vmNamespace: string;
   namespace: string;

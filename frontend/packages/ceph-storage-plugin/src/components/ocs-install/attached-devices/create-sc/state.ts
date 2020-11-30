@@ -1,6 +1,8 @@
 import { HostNamesMap } from '@console/local-storage-operator-plugin/src/components/auto-detect-volume/types';
-import { diskTypeDropdownItems, diskModeDropdownItems } from '../../../../constants';
+import { diskTypeDropdownItems } from '@console/local-storage-operator-plugin/src/constants';
+import { diskModeDropdownItems } from '../../../../constants';
 import { StorageClassResourceKind, NodeKind } from '@console/internal/module/k8s';
+import { EncryptionType, KMSConfig, NetworkType } from '../../types';
 
 export const initialState: State = {
   // states for step 1
@@ -13,7 +15,7 @@ export const initialState: State = {
   volumeSetName: '',
   storageClassName: '',
   showNodesListOnLVS: false,
-  diskType: diskTypeDropdownItems.SSD,
+  diskType: diskTypeDropdownItems.All,
   diskMode: diskModeDropdownItems.BLOCK,
   maxDiskLimit: '',
   nodeNames: [], // nodes selected on the LVS step
@@ -42,7 +44,21 @@ export const initialState: State = {
   enableMinimal: false,
   storageClass: { provisioner: '', reclaimPolicy: '' },
   nodes: [],
-  enableEncryption: false,
+  // Encryption state initialization
+  encryption: {
+    clusterWide: false,
+    storageClass: false,
+    advanced: false,
+    hasHandled: true,
+  },
+  // KMS object state
+  kms: {
+    name: 'ocs-vault-connection',
+    hasHandled: true,
+  },
+  networkType: NetworkType.DEFAULT,
+  clusterNetwork: '',
+  publicNetwork: '',
 };
 
 export type Discoveries = {
@@ -94,7 +110,12 @@ export type State = {
   enableMinimal: boolean;
   storageClass: StorageClassResourceKind;
   nodes: NodeKind[];
-  enableEncryption: boolean;
+  // Encryption state declare
+  encryption: EncryptionType;
+  kms: KMSConfig;
+  networkType: NetworkType;
+  clusterNetwork: string;
+  publicNetwork: string;
 };
 
 export type Action =
@@ -130,7 +151,12 @@ export type Action =
   | { type: 'setEnableMinimal'; value: boolean }
   | { type: 'setStorageClass'; value: StorageClassResourceKind }
   | { type: 'setNodes'; value: NodeKind[] }
-  | { type: 'setEnableEncryption'; value: boolean };
+  // Encryption state actions
+  | { type: 'setEncryption'; value: EncryptionType }
+  | { type: 'setKmsEncryption'; value: KMSConfig }
+  | { type: 'setNetworkType'; value: NetworkType }
+  | { type: 'setClusterNetwork'; value: string }
+  | { type: 'setPublicNetwork'; value: string };
 
 export const reducer = (state: State, action: Action) => {
   switch (action.type) {
@@ -196,8 +222,18 @@ export const reducer = (state: State, action: Action) => {
       return Object.assign({}, state, { storageClass: action.value });
     case 'setNodes':
       return Object.assign({}, state, { nodes: action.value });
-    case 'setEnableEncryption':
-      return Object.assign({}, state, { enableEncryption: action.value });
+    // Encryption state reducer
+    case 'setEncryption':
+      return Object.assign({}, state, { encryption: action.value });
+    // KMS state reducer
+    case 'setKmsEncryption':
+      return Object.assign({}, state, { kms: action.value });
+    case 'setNetworkType':
+      return Object.assign({}, state, { networkType: action.value });
+    case 'setClusterNetwork':
+      return Object.assign({}, state, { clusterNetwork: action.value });
+    case 'setPublicNetwork':
+      return Object.assign({}, state, { publicNetwork: action.value });
     default:
       return initialState;
   }

@@ -52,9 +52,40 @@ export type RoutesOverviewListItem = {
   namespace: string;
 };
 
+export type EventSourceKind = {
+  status: {
+    conditions: EventSourceCondition[];
+  };
+} & K8sResourceKind;
+
+export enum EventSourceConditionTypes {
+  Ready = 'Ready',
+  Deployed = 'Deployed',
+  SinkProvided = 'SinkProvided',
+  ValidSchedule = 'ValidSchedule',
+}
+
+export type EventSourceCondition = {
+  type: keyof typeof EventSourceConditionTypes;
+} & K8sResourceCondition;
+
 export type EventSubscriptionKind = {
   metadata?: {
     generation?: number;
+  };
+  spec: {
+    channel: {
+      apiVersion: string;
+      kind: string;
+      name: string;
+    };
+    subscriber: {
+      ref?: {
+        apiVersion: string;
+        kind: string;
+        name: string;
+      };
+    };
   };
   status: {
     physicalSubscription: {
@@ -74,6 +105,14 @@ export type EventChannelKind = {
   };
 } & K8sResourceKind;
 
+export enum ChannelConditionTypes {
+  Ready = 'Ready',
+}
+
+export type ChannelCondition = {
+  type: keyof typeof ChannelConditionTypes;
+} & K8sResourceCondition;
+
 export type EventBrokerKind = {
   metadata?: {
     generation?: number;
@@ -84,6 +123,41 @@ export type EventBrokerKind = {
     };
   };
 } & K8sResourceKind;
+
+export enum TriggerConditionTypes {
+  Ready = 'Ready',
+  BrokerReady = 'BrokerReady',
+  DependencyReady = 'DependencyReady',
+  SubscriptionReady = 'SubscriptionReady',
+  SubscriberResolved = 'SubscriberResolved',
+}
+
+export type TriggerCondition = {
+  type: keyof typeof TriggerConditionTypes;
+} & K8sResourceCondition;
+
+export enum BrokerConditionTypes {
+  Ready = 'Ready',
+  Addressable = 'Addressable',
+  FilterReady = 'FilterReady',
+  IngressReady = 'IngressReady',
+  TriggerChannelReady = 'TriggerChannelReady',
+}
+
+export type BrokerCondition = {
+  type: keyof typeof BrokerConditionTypes;
+} & K8sResourceCondition;
+
+export enum SubscriptionConditionTypes {
+  Ready = 'Ready',
+  ChannelReady = 'ChannelReady',
+  AddedToChannel = 'AddedToChannel',
+  ReferencesResolved = 'ReferencesResolved',
+}
+
+export type SubscriptionCondition = {
+  type: keyof typeof SubscriptionConditionTypes;
+} & K8sResourceCondition;
 
 export type EventTriggerKind = {
   metadata?: {
@@ -103,5 +177,8 @@ export type EventTriggerKind = {
         name: string;
       };
     };
+  };
+  status?: {
+    conditions?: TriggerCondition[];
   };
 } & K8sResourceKind;

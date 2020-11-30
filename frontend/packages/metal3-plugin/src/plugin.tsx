@@ -92,7 +92,8 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/Href',
     properties: {
-      section: 'Compute',
+      id: 'baremetal',
+      section: 'compute',
       componentProps: {
         name: 'Bare Metal Hosts',
         href: formatNamespacedRouteForResource(
@@ -100,7 +101,7 @@ const plugin: Plugin<ConsumedExtensions> = [
           'openshift-machine-api',
         ),
       },
-      mergeBefore: 'ComputeSeparator',
+      insertBefore: 'computeseparator',
     },
     flags: {
       required: [BAREMETAL_FLAG, METAL3_FLAG],

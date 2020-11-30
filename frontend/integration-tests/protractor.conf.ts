@@ -7,11 +7,11 @@ import * as ConsoleReporter from 'jasmine-console-reporter';
 import * as failFast from 'protractor-fail-fast';
 import { createWriteStream, writeFileSync } from 'fs';
 import { format } from 'util';
+import { resolvePluginPackages } from '@console/plugin-sdk/src/codegen/plugin-resolver';
 import {
-  resolvePluginPackages,
   reducePluginTestSuites,
   mergeTestSuites,
-} from '@console/plugin-sdk/src/codegen';
+} from '@console/plugin-sdk/src/codegen/plugin-integration-tests';
 
 const tap = !!process.env.TAP;
 
@@ -66,11 +66,6 @@ const testSuites = {
   crudBasic: suite(['tests/crud.scenario.ts']),
   monitoring: suite(['tests/monitoring.scenario.ts']),
   newApp: suite(['tests/overview/overview.scenario.ts', 'tests/deploy-image.scenario.ts']),
-  olmFull: suite([
-    '../packages/operator-lifecycle-manager/integration-tests/scenarios/descriptors.scenario.ts',
-    '../packages/operator-lifecycle-manager/integration-tests/scenarios/operator-hub.scenario.ts',
-    '../packages/operator-lifecycle-manager/integration-tests/scenarios/global-installmode.scenario.ts',
-  ]),
   performance: suite(['tests/performance.scenario.ts']),
   serviceCatalog: suite([
     'tests/service-catalog/service-catalog.scenario.ts',
@@ -121,7 +116,6 @@ const testSuites = {
     'tests/overview/overview.scenario.ts',
     'tests/secrets.scenario.ts',
     'tests/storage.scenario.ts',
-    'tests/olm/**/*.scenario.ts',
     'tests/service-catalog/**/*.scenario.ts',
     'tests/filter.scenario.ts',
     'tests/modal-annotations.scenario.ts',

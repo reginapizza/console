@@ -3,13 +3,15 @@ import { Node, observer } from '@patternfly/react-topology';
 import { DataListCell } from '@patternfly/react-core';
 import {
   CpuCellComponent,
-  getTopologyResourceObject,
   MemoryCellComponent,
   StatusCellResourceStatus,
   TopologyListViewNode,
-} from '@console/dev-console/src/components/topology';
-import { useOverviewMetrics } from '@console/dev-console/src/utils/useOverviewMetrics';
-import { getPodMetricStats } from '@console/dev-console/src/components/topology/list-view/metricStats';
+} from '@console/topology/src/components/list-view';
+import {
+  getTopologyResourceObject,
+  useOverviewMetrics,
+  getPodMetricStats,
+} from '@console/topology/src/utils';
 import { usePodsForRevisions } from '../../utils/usePodsForRevisions';
 
 interface KnativeRevisionListViewNodeProps {
@@ -26,9 +28,7 @@ const ObservedKnativeRevisionListViewNode: React.FC<KnativeRevisionListViewNodeP
 }) => {
   const resource = getTopologyResourceObject(item.getData());
   const metrics = useOverviewMetrics();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const revisions = React.useMemo(() => [resource], [resource.metadata.uid]);
-  const { loaded, pods } = usePodsForRevisions(revisions, resource.metadata.namespace);
+  const { loaded, pods } = usePodsForRevisions(resource.metadata.uid, resource.metadata.namespace);
   const podData = React.useMemo(() => {
     if (!loaded) {
       return null;

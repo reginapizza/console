@@ -5,11 +5,12 @@ import { ResourceOverviewDetails } from '@console/internal/components/overview/r
 import { groupVersionFor, K8sKind, referenceForModel } from '@console/internal/module/k8s';
 import { RootState } from '@console/internal/redux';
 import { OverviewItem } from '@console/shared';
-import { ModifyApplication } from '@console/dev-console/src/actions/modify-application';
+import { ModifyApplication } from '@console/topology/src/actions';
 import {
   KNATIVE_SERVING_APIGROUP,
   KNATIVE_EVENT_MESSAGE_APIGROUP,
   KNATIVE_EVENTING_APIGROUP,
+  CAMEL_APIGROUP,
 } from '../../const';
 import { RevisionModel } from '../../models';
 import { getRevisionActions } from '../../actions/getRevisionActions';
@@ -102,6 +103,7 @@ const mapStateToProps = (state: RootState): StateProps => {
           model.apiGroup === KNATIVE_SERVING_APIGROUP ||
           model.apiGroup === KNATIVE_EVENTING_APIGROUP ||
           model.apiGroup === KNATIVE_EVENT_MESSAGE_APIGROUP ||
+          model.apiGroup === CAMEL_APIGROUP ||
           isDynamicEventResourceKind(referenceForModel(model)) ||
           isEventingChannelResourceKind(referenceForModel(model)),
       ),

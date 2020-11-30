@@ -6,20 +6,30 @@ import { TotalCapacityText, OSD_CAPACITY_SIZES } from '../../../../utils/osd-siz
 import { VALIDATIONS, ValidationMessage } from '../../../../utils/common-ocs-install-el';
 import { getNodeInfo } from '../../../../utils/install';
 import { InternalClusterState } from '../reducer';
-import { MINIMUM_NODES } from '../../../../constants';
+import { MINIMUM_NODES, NetworkTypeLabels } from '../../../../constants';
 import {
   ReviewListTitle,
   ReviewListBody,
   NodesCard,
   RequestErrors,
 } from '../../install-wizard/review-and-create';
+import { NetworkType } from '../../types';
 
 export const ReviewAndCreate: React.FC<ReviewAndCreateProps> = ({
   state,
   errorMessage,
   inProgress,
 }) => {
-  const { nodes, enableEncryption, capacity, enableMinimal, storageClass } = state;
+  const {
+    nodes,
+    encryption,
+    kms,
+    capacity,
+    enableMinimal,
+    storageClass,
+    networkType,
+    publicNetwork,
+  } = state;
   const { cpu, memory, zones } = getNodeInfo(state.nodes);
   const scName = getName(storageClass);
   const emptyRequiredField =
@@ -63,12 +73,22 @@ export const ReviewAndCreate: React.FC<ReviewAndCreateProps> = ({
           <p>{pluralize(zones.size, 'zone')}</p>
         </ReviewListBody>
         {/* @TODO: Update the check from Configure when adding more items */}
-        {enableEncryption && <ReviewListTitle text="Configure" />}
-        {enableEncryption && (
-          <ReviewListBody>
-            <p>Enable Encryption</p>
-          </ReviewListBody>
+        <ReviewListTitle text="Configure" />
+        {(encryption.clusterWide || encryption.storageClass) && (
+          <>
+            <ReviewListBody>
+              <p className="ocs-install-wizard__review-encryption">Enable Encryption</p>
+              {encryption.advanced && kms.hasHandled && (
+                <p>Connected to external key management service: {kms.name}</p>
+              )}
+            </ReviewListBody>
+          </>
         )}
+        <ReviewListBody
+          validation={networkType === NetworkType.MULTUS && !publicNetwork && VALIDATIONS.NETWORK}
+        >
+          <p>Using {NetworkTypeLabels[networkType]}</p>
+        </ReviewListBody>
       </dl>
       {emptyRequiredField && (
         <ValidationMessage

@@ -42,7 +42,8 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/ResourceNS',
     properties: {
-      section: 'Networking',
+      id: 'networkattachmentdefinitions',
+      section: 'networking',
       componentProps: {
         name: 'Network Attachment Definitions',
         resource: referenceForModel(models.NetworkAttachmentDefinitionModel),

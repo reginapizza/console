@@ -224,7 +224,8 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/ResourceCluster',
     properties: {
-      section: 'Storage',
+      id: 'objectbuckets',
+      section: 'storage',
       componentProps: {
         name: 'Object Buckets',
         resource: models.NooBaaObjectBucketModel.plural,
@@ -257,7 +258,8 @@ const plugin: Plugin<ConsumedExtensions> = [
   {
     type: 'NavItem/ResourceNS',
     properties: {
-      section: 'Storage',
+      id: 'objectbucketclaims',
+      section: 'storage',
       componentProps: {
         name: 'Object Bucket Claims',
         resource: models.NooBaaObjectBucketClaimModel.plural,

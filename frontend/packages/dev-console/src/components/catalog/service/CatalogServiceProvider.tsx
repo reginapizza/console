@@ -2,14 +2,14 @@ import * as React from 'react';
 import * as _ from 'lodash';
 import { CatalogExtensionHookOptions, CatalogItem } from '@console/plugin-sdk';
 import { ResolvedExtension } from '@console/dynamic-plugin-sdk/src/api/useResolvedExtensions';
-import { keywordCompare } from '../utils/utils';
+import { keywordCompare } from '../utils/catalog-utils';
 import useCatalogExtensions from '../hooks/useCatalogExtensions';
-import CatalogItemsLoader from './CatalogItemsLoader';
+import CatalogExtensionHookResolver from './CatalogExtensionHookResolver';
 
 export type CatalogService = {
   type: string;
   items: CatalogItem[];
-  itemsMap: { [key: string]: CatalogItem[] };
+  itemsMap: { [type: string]: CatalogItem[] };
   loaded: boolean;
   loadError: any;
   searchCatalog: (query: string) => CatalogItem[];
@@ -28,24 +28,37 @@ const CatalogServiceProvider: React.FC<CatalogServiceProviderProps> = ({
   namespace,
 }) => {
   const defaultOptions: CatalogExtensionHookOptions = { namespace };
-  const [catalogTypeExtensions, catalogProviderExtensions] = useCatalogExtensions(catalogType);
+  const [
+    catalogTypeExtensions,
+    catalogProviderExtensions,
+    extensionsResolved,
+  ] = useCatalogExtensions(catalogType);
 
-  const [catalogItemsMap, setCatalogItemsMap] = React.useState<{ [key: string]: CatalogItem[] }>(
-    {},
-  );
+  const [extItemsMap, setExtItemsMap] = React.useState<{ [uid: string]: CatalogItem[] }>({});
   const [loadError, setLoadError] = React.useState();
 
   const loaded =
-    catalogTypeExtensions.length === 0 ||
-    catalogTypeExtensions.every(({ properties: { type } }) => catalogItemsMap[type]);
+    extensionsResolved &&
+    (catalogProviderExtensions.length === 0 ||
+      catalogProviderExtensions.every(({ uid }) => extItemsMap[uid]));
 
-  const catalogItems = React.useMemo(
-    () => (loaded ? _.sortBy(_.flatten(Object.values(catalogItemsMap)), 'name') : []),
-    [catalogItemsMap, loaded],
-  );
+  const catalogItems = React.useMemo(() => {
+    if (!loaded) {
+      return [];
+    }
+    const itemMap = _.flatten(catalogProviderExtensions.map((e) => extItemsMap[e.uid])).reduce(
+      (acc, item) => {
+        acc[item.uid] = item;
+        return acc;
+      },
+      {} as { [uid: string]: CatalogItem },
+    );
 
-  const handleItemsLoaded = React.useCallback((items, type) => {
-    setCatalogItemsMap((prev) => ({ ...prev, [type]: items }));
+    return _.sortBy(Object.values(itemMap), 'name');
+  }, [extItemsMap, loaded, catalogProviderExtensions]);
+
+  const onValueResolved = React.useCallback((items, uid) => {
+    setExtItemsMap((prev) => ({ ...prev, [uid]: items }));
   }, []);
 
   const searchCatalog = React.useCallback(
@@ -54,6 +67,17 @@ const CatalogServiceProvider: React.FC<CatalogServiceProviderProps> = ({
     },
     [catalogItems],
   );
+
+  const catalogItemsMap = React.useMemo(() => {
+    const result: { [type: string]: CatalogItem[] } = {};
+    catalogProviderExtensions.forEach((e) => {
+      result[e.properties.type] = [];
+    });
+    catalogItems.forEach((item) => {
+      result[item.type].push(item);
+    });
+    return result;
+  }, [catalogProviderExtensions, catalogItems]);
 
   const catalogService = {
     type: catalogType,
@@ -67,22 +91,17 @@ const CatalogServiceProvider: React.FC<CatalogServiceProviderProps> = ({
 
   return (
     <>
-      {catalogTypeExtensions.map((typeExtension) => {
-        const providers = catalogProviderExtensions.filter(
-          (providerExtension) =>
-            typeExtension.properties.type === providerExtension.properties.type,
-        );
-        return (
-          <CatalogItemsLoader
-            key={typeExtension.properties.type}
-            catalogType={typeExtension.properties.type}
-            providerExtensions={providers}
-            onItemsLoaded={handleItemsLoaded}
-            onLoadError={setLoadError}
+      {extensionsResolved &&
+        catalogProviderExtensions.map((extension) => (
+          <CatalogExtensionHookResolver
+            key={extension.uid}
+            id={extension.uid}
+            useValue={extension.properties.provider}
             options={defaultOptions}
+            onValueResolved={onValueResolved}
+            onValueError={setLoadError}
           />
-        );
-      })}
+        ))}
       {children(catalogService)}
     </>
   );

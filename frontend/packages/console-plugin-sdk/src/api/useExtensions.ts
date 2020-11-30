@@ -3,6 +3,25 @@ import * as _ from 'lodash';
 import { useForceRender } from '@console/shared/src/hooks/useForceRender';
 import { subscribeToExtensions } from './subscribeToExtensions';
 import { Extension, ExtensionTypeGuard, LoadedExtension } from '../typings';
+import useTranslationExt from '../utils/useTranslationExt';
+
+function translate(obj: any, t: (str: string) => string): any {
+  if (typeof obj === 'string') {
+    return t(obj);
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((a) => translate(a, t));
+  }
+  // Check for plain object and ensure it is not a react component.
+  // Simple check for react component is sufficient.
+  if (_.isPlainObject(obj) && !obj.$$typeof) {
+    return Object.keys(obj).reduce((acc, key) => {
+      acc[key] = translate(obj[key], t);
+      return acc;
+    }, {});
+  }
+  return obj;
+}
 
 /**
  * React hook for consuming Console extensions.
@@ -50,15 +69,19 @@ export const useExtensions = <E extends Extension>(
   const unsubscribeRef = React.useRef<VoidFunction>(null);
   const extensionsInUseRef = React.useRef<LoadedExtension<E>[]>([]);
   const latestTypeGuardsRef = React.useRef<ExtensionTypeGuard<E>[]>(typeGuards);
+  const { t } = useTranslationExt();
 
   const trySubscribe = React.useCallback(() => {
     if (unsubscribeRef.current === null) {
       unsubscribeRef.current = subscribeToExtensions<E>((extensions) => {
-        extensionsInUseRef.current = extensions;
+        extensionsInUseRef.current = extensions.map((ext) => ({
+          ...ext,
+          properties: translate(ext.properties, t),
+        }));
         isMountedRef.current && forceRender();
       }, ...latestTypeGuardsRef.current);
     }
-  }, [forceRender]);
+  }, [forceRender, t]);
 
   const tryUnsubscribe = React.useCallback(() => {
     if (unsubscribeRef.current !== null) {

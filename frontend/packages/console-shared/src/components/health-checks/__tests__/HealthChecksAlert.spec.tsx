@@ -2,7 +2,7 @@ import * as React from 'react';
 import { shallow } from 'enzyme';
 import { Alert } from '@patternfly/react-core';
 import * as utils from '@console/internal/components/utils';
-import { sampleDeployments } from '@console/dev-console/src/components/topology/__tests__/topology-test-data';
+import { sampleDeployments } from '@console/shared/src/utils/__tests__/test-resource-data';
 import HealthChecksAlert from '../HealthChecksAlert';
 
 jest.mock('react-i18next', () => {
@@ -12,6 +12,10 @@ jest.mock('react-i18next', () => {
     useTranslation: () => ({ t: (key) => key }),
   };
 });
+
+jest.mock('@console/shared/src/hooks/useUserSettingsCompatibility', () => ({
+  useUserSettingsCompatibility: () => [[], jest.fn(), true],
+}));
 
 describe('HealthChecksAlert', () => {
   const spyUseAccessReview = jest.spyOn(utils, 'useAccessReview');

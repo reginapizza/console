@@ -1,9 +1,11 @@
 import * as React from 'react';
 import { Formik } from 'formik';
+import { useTranslation } from 'react-i18next';
 import {
   createModalLauncher,
   ModalComponentProps,
 } from '@console/internal/components/factory/modal';
+import { LoadingBox } from '@console/internal/components/utils';
 import { Pipeline } from '../../../../utils/pipeline-augment';
 import ModalStructure from '../common/ModalStructure';
 import { convertPipelineToModalData } from '../common/utils';
@@ -12,14 +14,24 @@ import AddTriggerForm from './AddTriggerForm';
 import { TRIGGER_BINDING_EMPTY } from './const';
 import { submitTrigger } from './submit-utils';
 import { AddTriggerFormValues } from './types';
+import { usePipelinePVC } from '../../hooks';
 
 type AddTriggerModalProps = ModalComponentProps & {
   pipeline: Pipeline;
 };
 
 const AddTriggerModal: React.FC<AddTriggerModalProps> = ({ pipeline, close }) => {
+  const { t } = useTranslation();
+  const [pipelinePVC, pipelinePVCLoaded] = usePipelinePVC(
+    pipeline.metadata?.name,
+    pipeline.metadata?.namespace,
+  );
+
+  if (!pipelinePVCLoaded) {
+    return <LoadingBox />;
+  }
   const initialValues: AddTriggerFormValues = {
-    ...convertPipelineToModalData(pipeline, true),
+    ...convertPipelineToModalData(pipeline, true, pipelinePVC?.metadata?.name),
     triggerBinding: {
       name: TRIGGER_BINDING_EMPTY,
       resource: null,
@@ -35,7 +47,9 @@ const AddTriggerModal: React.FC<AddTriggerModalProps> = ({ pipeline, close }) =>
         close();
       })
       .catch((error) => {
-        actions.setStatus({ submitError: error?.message || 'There was an unknown error' });
+        actions.setStatus({
+          submitError: error?.message || t('pipelines-plugin~There was an unknown error'),
+        });
       });
   };
 
@@ -43,10 +57,15 @@ const AddTriggerModal: React.FC<AddTriggerModalProps> = ({ pipeline, close }) =>
     <Formik
       initialValues={initialValues}
       onSubmit={handleSubmit}
-      validationSchema={addTriggerSchema}
+      validationSchema={addTriggerSchema(t)}
     >
       {(formikProps) => (
-        <ModalStructure submitBtnText="Add" title="Add Trigger" close={close} {...formikProps}>
+        <ModalStructure
+          submitBtnText={t('pipelines-plugin~Add')}
+          title={t('pipelines-plugin~Add Trigger')}
+          close={close}
+          {...formikProps}
+        >
           <AddTriggerForm {...formikProps} />
         </ModalStructure>
       )}
