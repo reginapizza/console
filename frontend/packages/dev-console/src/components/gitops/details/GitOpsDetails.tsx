@@ -1,7 +1,17 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 import { useTranslation } from 'react-i18next';
-import { Stack, StackItem, Card, CardTitle, SplitItem, Split, Label } from '@patternfly/react-core';
+import {
+  Stack,
+  StackItem,
+  Card,
+  CardTitle,
+  CardBody,
+  CardFooter,
+  SplitItem,
+  Split,
+  Label,
+} from '@patternfly/react-core';
 import { ExternalLink, ResourceIcon } from '@console/internal/components/utils';
 import { ConsoleLinkModel } from '@console/internal/models';
 import { useK8sWatchResource } from '@console/internal/components/utils/k8s-watch-hook';
@@ -37,27 +47,24 @@ const GitOpsDetails: React.FC<GitOpsDetailsProps> = ({ envs, appName }) => {
               <StackItem>
                 <Card>
                   <CardTitle className="odc-gitops-details__env-section__header">
+                    <Split style={{ alignItems: 'center' }} hasGutter>
+                      <SplitItem
+                        className="odc-gitops-details__env-section__title co-truncate co-nowrap"
+                        isFilled
+                      >
+                        {env.environment}
+                      </SplitItem>
+                      <SplitItem>
+                        <Label className="odc-gitops-details__env-section__timestamp" color="grey">
+                          <span style={{ color: 'var(--pf-global--palette--black-600)' }}>
+                            {env.timestamp}
+                          </span>
+                        </Label>
+                      </SplitItem>
+                    </Split>
+                  </CardTitle>
+                  <CardBody>
                     <Stack>
-                      <StackItem>
-                        <Split style={{ alignItems: 'center' }} hasGutter>
-                          <SplitItem
-                            className="odc-gitops-details__env-section__title co-truncate co-nowrap"
-                            isFilled
-                          >
-                            {env.environment}
-                          </SplitItem>
-                          <SplitItem>
-                            <Label
-                              className="odc-gitops-details__env-section__timestamp"
-                              color="grey"
-                            >
-                              <span style={{ color: 'var(--pf-global--palette--black-600)' }}>
-                                {env.timestamp}
-                              </span>
-                            </Label>
-                          </SplitItem>
-                        </Split>
-                      </StackItem>
                       <StackItem className="co-truncate co-nowrap">
                         {env.cluster ? (
                           <ExternalLink
@@ -72,22 +79,22 @@ const GitOpsDetails: React.FC<GitOpsDetailsProps> = ({ envs, appName }) => {
                         )}
                       </StackItem>
                       <StackItem className="co-truncate co-nowrap">
-                        <span className="co-resource-item odc-gitops-details__env-section__co-resource-item">
+                        <span className="co-resource-item">
                           <ResourceIcon kind="Project" />
                           <span className="co-resource-item__resource-name">{env.environment}</span>
                         </span>
                       </StackItem>
-                      <StackItem className="co-truncate co-nowrap">
-                        {env.environment && argocdLink && (
-                          <ExternalLink
-                            href={`${argocdLink.spec.href}/applications/${env.environment}-${appName}`}
-                            text="Argo CD"
-                            additionalClassName="odc-gitops-details__env-section__argocd-link"
-                          />
-                        )}
-                      </StackItem>
                     </Stack>
-                  </CardTitle>
+                  </CardBody>
+                  {env.environment && argocdLink && (
+                    <CardFooter>
+                      <ExternalLink
+                        href={`${argocdLink.spec.href}/applications/${env.environment}-${appName}`}
+                        text="Argo CD"
+                        additionalClassName="odc-gitops-details__env-section__argocd-link"
+                      />
+                    </CardFooter>
+                  )}
                 </Card>
               </StackItem>
               <GitOpsServiceDetailsSection services={env.services} />
