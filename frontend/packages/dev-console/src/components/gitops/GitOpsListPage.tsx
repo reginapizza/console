@@ -57,10 +57,10 @@ const GitOpsListPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>{t('devconsole~Application Stages')}</title>
+        <title>{t('devconsole~Environments')}</title>
       </Helmet>
       <PageHeading
-        title={t('devconsole~Application Stages')}
+        title={t('devconsole~Environments')}
         badge={
           <Split className="odc-gitops-list-page-heading" hasGutter>
             <SplitItem>
